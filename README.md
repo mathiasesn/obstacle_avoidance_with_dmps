@@ -11,6 +11,8 @@ The project will contain the following subjects:
 - Dynamic movement primitives
 - Pose estimation (optional)
 
+[Robotics toolbox for matlab](https://github.com/petercorke/robotics-toolbox-matlab.git).
+
 ## Litterature
 
 **Dynamic Movement Primitives**
