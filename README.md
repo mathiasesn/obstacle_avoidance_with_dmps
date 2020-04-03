@@ -28,4 +28,4 @@ The project will contain the following subjects:
 - <https://studywolf.wordpress.com/2013/11/16/dynamic-movement-primitives-part-1-the-basics/>
 - <https://studywolf.wordpress.com/2016/05/13/dynamic-movement-primitives-part-4-avoiding-obstacles/>
 
-More information is given in lecture 10: Programming by Demonstration.
+More information is given in lecture 10: Programming by Demonstration in Advanced Robotics 2.
