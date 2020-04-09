@@ -25,22 +25,29 @@ def conv3x3(in_planes, out_planes, stride=1, dilation=1):
         out_planes {[type]} -- [description]
     
     Keyword Arguments:
-        stride {int} -- [description] (default: {1})
-        dilation {int} -- [description] (default: {1})
+        stride {int} -- the stride use for convulution (default: {1})
+        dilation {int} -- dilation size (default: {1})
+    
+    Returns:
+        [type] -- [description]
     """
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=dilation, dilation=dilation, bias=False)
 
 class BasicBlock(nn.Module):
-    """[summary]
+    """BasicBlock for ResNet. Structure: layer 1 --> conv + relu and layer 2 --> 
+    conv + downsample + input + relu.
     
     Arguments:
-        nn {[type]} -- [description]
+        nn {torch.nn.Module} -- Base class for all neural network modules
+    
+    Returns:
+        BasicBlock -- A basic block.
     """
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, dilation=1):
-        """[summary]
+        """initialization function of the basic block
         
         Arguments:
             inplanes {[type]} -- [description]
@@ -59,10 +66,13 @@ class BasicBlock(nn.Module):
         self.stride = stride
     
     def forward(self, x):
-        """[summary]
+        """Forward propagation of the basic block. 
         
         Arguments:
-            x {[type]} -- [description]
+            x {[type]} -- input.
+        
+        Returns:
+            [type] -- propagated input.
         """
         residual = x
         out = self.conv1(x)
@@ -74,25 +84,29 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
         return out
 
-class Bottlenect(nn.Module):
-    """[summary]
+class Bottleneck(nn.Module):
+    """Bottleneck for ResNet. Structure: layer 1 --> conv + relu, layer 2 -->
+    conv + relu and layers 3 --> conv + downsample + input + relu.
     
     Arguments:
-        nn {[type]} -- [description]
+        nn {torch.nn.Module} -- Base class for all neural network modules.
+    
+    Returns:
+        [type] -- [description]
     """
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, dilation=1):
-        """[summary]
+        """Initialization of bottleneck.
         
         Arguments:
             inplanes {[type]} -- [description]
             planes {[type]} -- [description]
         
         Keyword Arguments:
-            stride {int} -- [description] (default: {1})
-            downsample {[type]} -- [description] (default: {None})
-            dilation {int} -- [description] (default: {1})
+            stride {int} -- (default: {1})
+            downsample {[type]} -- (default: {None})
+            dilation {int} -- (default: {1})
         """
         super(Bottlenect, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
@@ -104,10 +118,13 @@ class Bottlenect(nn.Module):
         self.stride = stride
 
     def forward(self, x):
-        """[summary]
+        """Forward propagation of bottleneck
         
         Arguments:
-            x {[type]} -- [description]
+            x {[type]} -- input
+        
+        Returns:
+            [type] -- forward propagated input
         """
         residual = x
         out = self.conv1(x)
@@ -122,19 +139,22 @@ class Bottlenect(nn.Module):
         return out
 
 class ResNet(nn.Module):
-    """[summary]
+    """Residual Neural Network(ResNet). 
     
     Arguments:
-        nn {[type]} -- [description]
+        nn {torch.nn.Module} -- Base class for all neural network modules
+    
+    Returns:
+        [type] -- ResNet
     """
     def __init__(self, block, layers=(3,4,23,3)):
-        """[summary]
+        """Initialization function of ResNet class.
         
         Arguments:
-            block {[type]} -- [description]
+            block {[type]} -- BasicBlock or Bottleneck (from above).
         
         Keyword Arguments:
-            layers {tuple} -- [description] (default: {(3,4,23,3)})
+            layers {tuple} -- number of layers (default: {(3,4,23,3)})
         """
         self.inplanes = 64
         super(ResNet, self).__init__()
@@ -154,7 +174,7 @@ class ResNet(nn.Module):
                 m.bias.data.zero_()
 
     def _make_layer(self, block, planes, blocks, stride=1, dilation=1):
-        """[summary]
+        """Creates a layer of ResNet.
         
         Arguments:
             block {[type]} -- [description]
@@ -162,8 +182,11 @@ class ResNet(nn.Module):
             blocks {[type]} -- [description]
         
         Keyword Arguments:
-            stride {int} -- [description] (default: {1})
-            dilation {int} -- [description] (default: {1})
+            stride {int} -- (default: {1})
+            dilation {int} -- (default: {1})
+        
+        Returns:
+            [type] -- ResNet layer.
         """
         downsample = None
         if stride != 1 or self.inplanes != (planes*block.expansion):
@@ -175,3 +198,66 @@ class ResNet(nn.Module):
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes, dilation=dilation))
         return nn.Sequential(*layers)
+    
+    def forward(self, x):
+        """Forward propagation of ResNet network.
+        
+        Arguments:
+            x {[type]} -- input
+        
+        Returns:
+            [type] -- forward propagated input
+        """
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x3 = self.layer3(x)
+        x = self.layer4(x3)
+        return x, x3
+
+    def resnet18():
+        """ResNet with 18 layers.
+        
+        Returns:
+            [type] -- [description]
+        """
+        model = ResNet(BasicBlock, [2, 2, 2, 2])
+        return model
+
+    def resnet34():
+        """ResNet with 34 layers.
+        
+        Returns:
+            [type] -- [description]
+        """
+        model = ResNet(BasicBlock, [3, 4, 6, 3])
+        return model
+
+    def resnet50():
+        """ResNet with 50 layers.
+        
+        Returns:
+            [type] -- [description]
+        """
+        model = ResNet(Bottleneck, [3, 4, 6, 3])
+        return model
+
+    def resnet101():
+        """ResNet with 101 layers.
+        
+        Returns:
+            [type] -- [description]
+        """
+        model = ResNet(Bottleneck, [3, 4, 23, 3])
+        return model
+
+    def resnet152():
+        """ResNet with 152 layers.
+        
+        Returns:
+            [type] -- [description]
+        """
+        model = ResNet(Bottleneck, [3, 8, 36, 3])
+        return model
