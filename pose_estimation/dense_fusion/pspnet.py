@@ -1,16 +1,15 @@
+"""Pyramid Scene Parsing Network
+"""
+
+
 import torch
 from torch import nn
 from torch.nn import functional as F
 import extractors as extractors
 
+
 class PSPModule(nn.Module):
     """Pyramid Pooling Module
-    
-    Arguments:
-        nn {[type]} -- [description]
-    
-    Returns:
-        [type] -- [description]
     """
     def __init__(self, features, out_features=1024, sizes=(1, 2, 3, 6)):
         """Initalization function for Pyramid Pooling Module
@@ -40,14 +39,9 @@ class PSPModule(nn.Module):
         bottle = self.bottleneck(torch.cat(priors, 1))
         return self.relu(bottle)
 
+
 class PSPUpsample(nn.Module):
-    """Pyramid Scene Parsing Upsample.
-    
-    Arguments:
-        nn {[type]} -- [description]
-    
-    Returns:
-        [type] -- [description]
+    """Pyramid Scene Parsing Upsample
     """
     def __init__(self, in_channels, out_channels):
         """Pyramid Scene Parsing Upsample.
@@ -75,15 +69,10 @@ class PSPUpsample(nn.Module):
         """
         return self.conv(x)
 
+
 class PSPNet(nn.Module):
     """Pyramid Scene Parsing Network (PSPNet) a neural network for pixel-level
-    prediction.
-    
-    Arguments:
-        nn {[type]} -- [description]
-    
-    Returns:
-        [type] -- [description]
+    prediction
     """
     def __init__(self, n_classes=21, sizes=(1, 2, 3, 6), psp_size=2048,
                  deep_features_size=1024, backend='resnet18', pretrained=False):
@@ -127,10 +116,14 @@ class PSPNet(nn.Module):
         """
         f, class_f = self.features(x)
         p = self.psp(f)
+
         p = self.drop1(p)
         p = self.up1(p)
+
         p = self.drop2(p)
         p = self.up2(p)
+
         p = self.drop2(p)
         p = self.up3(p)
+
         return self.final(p)

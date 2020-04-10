@@ -1,9 +1,14 @@
+"""Feature extractors - Residual Neural Network
+"""
+
+
 from collections import OrderedDict
 import math
 import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 def load_weights_sequential(target, source_state):
     """[summary]
@@ -34,20 +39,15 @@ def conv3x3(in_planes, out_planes, stride=1, dilation=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=dilation, dilation=dilation, bias=False)
 
+
 class BasicBlock(nn.Module):
     """BasicBlock for ResNet. Structure: layer 1 --> conv + relu and layer 2 --> 
     conv + downsample + input + relu.
-    
-    Arguments:
-        nn {torch.nn.Module} -- Base class for all neural network modules
-    
-    Returns:
-        BasicBlock -- A basic block.
     """
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, dilation=1):
-        """initialization function of the basic block
+        """Creates a BasicBlock object
         
         Arguments:
             inplanes {[type]} -- [description]
@@ -75,29 +75,27 @@ class BasicBlock(nn.Module):
             [type] -- propagated input.
         """
         residual = x
+
         out = self.conv1(x)
         out = self.relu(out)
+
         out = self.conv2(out)
         if self.downsample is not None:
             residual = self.downsample(x)
         out += residual
         out = self.relu(out)
+
         return out
+
 
 class Bottleneck(nn.Module):
     """Bottleneck for ResNet. Structure: layer 1 --> conv + relu, layer 2 -->
     conv + relu and layers 3 --> conv + downsample + input + relu.
-    
-    Arguments:
-        nn {torch.nn.Module} -- Base class for all neural network modules.
-    
-    Returns:
-        [type] -- [description]
     """
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, dilation=1):
-        """Initialization of bottleneck.
+        """Creates a Bottleneck object
         
         Arguments:
             inplanes {[type]} -- [description]
@@ -127,31 +125,30 @@ class Bottleneck(nn.Module):
             [type] -- forward propagated input
         """
         residual = x
+
         out = self.conv1(x)
         out = self.relu(out)
+
         out = self.conv2(out)
         out = self.relu(out)
+
         out = self.conv3(out)
         if self.downsample is not None:
             residual = self.downsample(x)
         out += residual
         out = self.relu(out)
+
         return out
 
+
 class ResNet(nn.Module):
-    """Residual Neural Network(ResNet). 
-    
-    Arguments:
-        nn {torch.nn.Module} -- Base class for all neural network modules
-    
-    Returns:
-        [type] -- ResNet
+    """Residual Neural Network(ResNet)
     """
     def __init__(self, block, layers=(3,4,23,3)):
-        """Initialization function of ResNet class.
+        """Creates a ResNet object.
         
         Arguments:
-            block {[type]} -- BasicBlock or Bottleneck (from above).
+            block {BasicBlock or Bottleneck} -- 
         
         Keyword Arguments:
             layers {tuple} -- number of layers (default: {(3,4,23,3)})
