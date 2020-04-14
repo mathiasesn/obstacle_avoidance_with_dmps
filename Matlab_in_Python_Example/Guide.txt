@@ -1,0 +1,11 @@
+####Pre-Requirements####
+Install anaconda
+Create new anaconda enviroment and activate it
+Run "conda install python==3.7"
+
+####Compiling python MatLab####
+1. Find MatLab root folder (can be found with MatLab command "matlabroot")
+2. Open adminstrator terminal if on windows and navigate to "cd matlabroot\extern\engines\python"
+3. Run "python setup.py install"
+
+MatLab is now ready for use in python. See test.py for example.
