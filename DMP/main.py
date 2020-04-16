@@ -53,8 +53,8 @@ if __name__ == '__main__':
     axs[2].legend()
 
     # 3D plot the DMP against the original demonstration       
-    sphere = Obstacle([0.575, 0.30, 0.45])
-    #sphere = Obstacle([0., 0.25, 0.80])
+    #sphere = Obstacle([0.575, 0.30, 0.45])
+    sphere = Obstacle([0., 0.25, 0.80])
 
     fig2 = plt.figure(2)
     ax = plt.axes(projection='3d')

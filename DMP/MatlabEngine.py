@@ -69,7 +69,7 @@ class MatlabEngine:
         self.engine.workspace["endPose"] = self.engine.eval("trvec2tform([0.5,0.2,0.4])*axang2tform([1 0 0 pi])")
         self.engine.workspace["endConfig"] = self.engine.eval("ik('panda_link8', endPose, weights, homeConfiguration)")
 
-        q = self.engine.eval("trapveltraj([homeConfiguration,startConfig,endConfig],200,'EndTime',2)")
+        q = self.engine.eval("trapveltraj([homeConfiguration,startConfig,endConfig],6000,'EndTime',2)")
         self.engine.workspace["q"] = q
         self.q = np.array(q)
 

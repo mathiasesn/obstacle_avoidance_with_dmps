@@ -40,8 +40,8 @@ class PositionDMP():
         # TODO: Implement the transformation system differential equation for the acceleration, given that you know the
         # values of the following variables:
         # self.alpha, self.beta, self.gp, self.p, self.dp, tau, x
-        sphere  = Obstacle([0.575, 0.30, 0.45])
-        #sphere = Obstacle([0., 0.25, 0.80])
+        #sphere  = Obstacle([0.575, 0.30, 0.45])
+        sphere = Obstacle([0., 0.25, 0.80])
 
         self.ddp = (self.alpha*( self.beta * (self.gp - self.p) - tau*self.dp ) + fp(x) + Ct_coupling(self.p, self.dp, sphere) )/(tau*tau)
 

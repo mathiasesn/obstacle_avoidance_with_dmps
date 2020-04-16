@@ -17,3 +17,7 @@ class Obstacle:
         self.x = self.r * np.sin(phi) * np.cos(theta) + self.pos[0]
         self.y = self.r * np.sin(phi) * np.sin(theta) + self.pos[1]
         self.z = self.r * np.cos(phi)                 + self.pos[2]
+
+
+# Matlab visualization of obstacle:
+# https://se.mathworks.com/help/robotics/examples/check-for-environmental-collisions-with-manipulators.html
