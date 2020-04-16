@@ -21,6 +21,15 @@ class MatlabEngine:
             self.engine.eval("show(robot, qi')")
 
     def plot_path(self):
+        self.positions       = []
+        for i in range(self.q.shape[1]):
+            self.engine.workspace["qi"] = matlab.double(self.q[:,i].tolist())
+            self.engine.workspace["Ti"] = self.engine.eval("getTransform(robot, qi', 'panda_link8')")
+            Pi = self.engine.eval("Ti(1:3, 4)'")
+            self.positions.append(Pi)
+        self.positions  = np.array(self.positions).squeeze()
+
+
         fig1 = plt.figure(1)
         ax = plt.axes(projection='3d')
         ax.plot3D(self.positions[:, 0].ravel(), self.positions[:, 1].ravel(), self.positions[:, 2].ravel(), label='Demonstration')
@@ -29,6 +38,25 @@ class MatlabEngine:
         ax.set_zlabel('Z')
         ax.legend()
         plt.show()
+
+    def save_trajectory(self):
+        rpy = []
+        traj = []
+        for i in range(self.q.shape[1]):
+            self.engine.workspace["qi"] = matlab.double(self.q[:,i].tolist())
+            self.engine.workspace["Ti"] = self.engine.eval("getTransform(robot, qi', 'panda_link8')")
+
+            pi  = np.array(self.engine.eval("Ti(1:3, 4)'")).squeeze()
+            rpy = np.array(self.engine.eval("tform2eul(Ti)")).squeeze()
+
+            traj.append(np.concatenate((pi, rpy)))
+            
+        #print(np.array(traj).shape)
+        filepath = "matlabdemo.dat"
+        #np.save(filepath, np.array(traj))
+        #np.array(traj).tofile(filepath)
+        np.savetxt(filepath, np.array(traj))
+            
         
     def generate_path(self):
         self.engine.workspace["homeConfiguration"] = self.engine.eval("robot.homeConfiguration")
@@ -45,26 +73,13 @@ class MatlabEngine:
         self.engine.workspace["q"] = q
         self.q = np.array(q)
 
-        # q[:, i] contains configuration for step i
-        self.transforms      = []
-        self.positions       = []
-        for i in range(self.q.shape[1]):
-            qi = matlab.double(self.q[:,i].tolist())
-            self.engine.workspace["qi"] = qi
-
-            Ti = self.engine.eval("getTransform(robot, qi', 'panda_link8')")
-            self.engine.workspace["Ti"] = Ti
-            self.transforms.append(Ti)
-
-            Pi = self.engine.eval("Ti(1:3, 4)'")
-            self.positions.append(Pi)
-        self.transforms = np.array(self.transforms)
-        self.positions  = np.array(self.positions).squeeze()
-
 
 Matlab_Engine = MatlabEngine()
+
 Matlab_Engine.load_robot()
 Matlab_Engine.generate_path()
-Matlab_Engine.plot_path()
-Matlab_Engine.simulate_robot()
-Matlab_Engine.exit()
+Matlab_Engine.save_trajectory()
+
+#Matlab_Engine.plot_path()
+#Matlab_Engine.simulate_robot()
+#Matlab_Engine.exit()

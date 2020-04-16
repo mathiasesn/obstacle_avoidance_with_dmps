@@ -37,6 +37,7 @@ def Ct(p,dp, sphere : Obstacle):
     R   = R_from_axis_angle(r, np.pi/2)
     steering_angle  = angle(vec_obj, dp)
     repuls          = np.matmul(R, dp) * repulsive(steering_angle)
+    print(repuls)
     return repuls
 
 def Ct_coupling(p, dp, sphere : Obstacle):

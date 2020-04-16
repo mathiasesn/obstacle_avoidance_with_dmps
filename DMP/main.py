@@ -7,8 +7,8 @@ from obstacle import Obstacle
 
 if __name__ == '__main__':
     # Load a demonstration file containing robot positions.
-    demo = np.loadtxt("demo.dat", delimiter=" ", skiprows=1)
-
+    demo = np.loadtxt("matlabdemo.dat", delimiter=" ", skiprows=1)
+    
     tau = 0.002 * len(demo)
     t = np.arange(0, tau, 0.002)
     demo_p = demo[:, 0:3]
@@ -28,6 +28,7 @@ if __name__ == '__main__':
 
     # TODO: ...or a different time constant:
     # tau = T
+    tau = tau
 
 
     # Generate an output trajectory from the trained DMP
@@ -53,6 +54,7 @@ if __name__ == '__main__':
 
     # 3D plot the DMP against the original demonstration       
     sphere = Obstacle([0.575, 0.30, 0.45])
+    #sphere = Obstacle([0., 0.25, 0.80])
 
     fig2 = plt.figure(2)
     ax = plt.axes(projection='3d')
