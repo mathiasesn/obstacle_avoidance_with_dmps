@@ -24,7 +24,7 @@ class PSPModule(nn.Module):
         super(PSPModule, self).__init__()
         self.stages = []
         self.stages = nn.ModuleList([self._make_stage(features, size) for size in sizes])
-        self.bottleneck = nn.Conv2d(features*(len(sizes)+1), out_features, kernel_size=1)
+        self.bottleneck = nn.Conv2d(features * (len(sizes) + 1), out_features, kernel_size=1)
         self.relu = nn.ReLU
 
     def _make_stage(self, features, size):
@@ -35,7 +35,8 @@ class PSPModule(nn.Module):
 
     def forward(self, features):
         h, w = features.size(2), features.size(3)
-        priors = [F.upsample(input=stage(features),size=(h,w),mode='bilinear') for stage in self.stages] + [features]
+        priors = [F.interpolate(input=stage(features), size=(h,w), mode='bilinear') for stage in self.stages] + [features]
+        # priors = [F.upsample(input=stage(features), size=(h,w), mode='bilinear') for stage in self.stages] + [features]
         bottle = self.bottleneck(torch.cat(priors, 1))
         return self.relu(bottle)
 
@@ -89,16 +90,20 @@ class PSPNet(nn.Module):
         """
         super(PSPNet, self).__init__()
         self.features = getattr(extractors, backend)()
-        self.psp = PSPModule(psp_size, 1014, sizes)
-        self.drop1 = nn.Dropout2d(p=0.3)
+        self.psp = PSPModule(psp_size, 1024, sizes)
+
         self.up1 = PSPUpsample(1024, 256)
         self.up2 = PSPUpsample(256, 64)
         self.up3 = PSPUpsample(64, 64)
+
+        self.drop1 = nn.Dropout2d(p=0.3)
         self.drop2 = nn.Dropout2d(p=0.15)
+        
         self.final = nn.Sequential(
             nn.Conv2d(64, 32, kernel_size=1),
             nn.LogSoftmax()
         )
+
         self.classifier = nn.Sequential(
             nn.Linear(deep_features_size, 256),
             nn.ReLU(),
@@ -114,16 +119,16 @@ class PSPNet(nn.Module):
         Returns:
             [type] -- [description]
         """
-        f, class_f = self.features(x)
+        f, class_f = self.features(x) 
         p = self.psp(f)
-
         p = self.drop1(p)
+
         p = self.up1(p)
-
         p = self.drop2(p)
+
         p = self.up2(p)
-
         p = self.drop2(p)
-        p = self.up3(p)
 
+        p = self.up3(p)
+        
         return self.final(p)

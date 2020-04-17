@@ -80,8 +80,10 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
 
         out = self.conv2(out)
+
         if self.downsample is not None:
             residual = self.downsample(x)
+
         out += residual
         out = self.relu(out)
 
@@ -103,7 +105,7 @@ class Bottleneck(nn.Module):
         
         Keyword Arguments:
             stride {int} -- (default: {1})
-            downsample {[type]} -- (default: {None})
+            downsample -- downsampling method (default: {None})
             dilation {int} -- (default: {1})
         """
         super(Bottlenect, self).__init__()
@@ -133,8 +135,10 @@ class Bottleneck(nn.Module):
         out = self.relu(out)
 
         out = self.conv3(out)
+
         if self.downsample is not None:
             residual = self.downsample(x)
+
         out += residual
         out = self.relu(out)
 
@@ -155,6 +159,7 @@ class ResNet(nn.Module):
         """
         self.inplanes = 64
         super(ResNet, self).__init__()
+
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -162,6 +167,7 @@ class ResNet(nn.Module):
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=1, dilation=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1, dilation=4)
+
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -174,26 +180,29 @@ class ResNet(nn.Module):
         """Creates a layer of ResNet.
         
         Arguments:
-            block {[type]} -- [description]
+            block -- BasicBlock or Bottleneck
             planes {[type]} -- [description]
-            blocks {[type]} -- [description]
+            blocks {int} -- number of blocks
         
         Keyword Arguments:
             stride {int} -- (default: {1})
             dilation {int} -- (default: {1})
         
         Returns:
-            [type] -- ResNet layer.
+            nn.Sequential -- ResNet layer
         """
         downsample = None
         if stride != 1 or self.inplanes != (planes*block.expansion):
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, (planes*block.expansion), kernel_size=1, stride=stride, bias=False)
+                nn.Conv2d(self.inplanes, (planes*block.expansion),
+                          kernel_size=1, stride=stride, bias=False)
             )
+
         layers = [block(self.inplanes, planes, stride, downsample)]
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes, dilation=dilation))
+    
         return nn.Sequential(*layers)
     
     def forward(self, x):
@@ -208,53 +217,55 @@ class ResNet(nn.Module):
         x = self.conv1(x)
         x = self.relu(x)
         x = self.maxpool(x)
+
         x = self.layer1(x)
         x = self.layer2(x)
         x3 = self.layer3(x)
         x = self.layer4(x3)
+
         return x, x3
 
-    def resnet18():
-        """ResNet with 18 layers.
-        
-        Returns:
-            [type] -- [description]
-        """
-        model = ResNet(BasicBlock, [2, 2, 2, 2])
-        return model
+def resnet18():
+    """ResNet with 18 layers.
+    
+    Returns:
+        ResNet -- ResNet with 18 layers
+    """
+    model = ResNet(BasicBlock, [2, 2, 2, 2])
+    return model
 
-    def resnet34():
-        """ResNet with 34 layers.
-        
-        Returns:
-            [type] -- [description]
-        """
-        model = ResNet(BasicBlock, [3, 4, 6, 3])
-        return model
+def resnet34():
+    """ResNet with 34 layers.
+    
+    Returns:
+        ResNet -- ResNet with 34 layers
+    """
+    model = ResNet(BasicBlock, [3, 4, 6, 3])
+    return model
 
-    def resnet50():
-        """ResNet with 50 layers.
-        
-        Returns:
-            [type] -- [description]
-        """
-        model = ResNet(Bottleneck, [3, 4, 6, 3])
-        return model
+def resnet50():
+    """ResNet with 50 layers.
+    
+    Returns:
+        ResNet -- ResNet with 50 layers
+    """
+    model = ResNet(Bottleneck, [3, 4, 6, 3])
+    return model
 
-    def resnet101():
-        """ResNet with 101 layers.
-        
-        Returns:
-            [type] -- [description]
-        """
-        model = ResNet(Bottleneck, [3, 4, 23, 3])
-        return model
+def resnet101():
+    """ResNet with 101 layers.
+    
+    Returns:
+        ResNet -- ResNet with 101 layers
+    """
+    model = ResNet(Bottleneck, [3, 4, 23, 3])
+    return model
 
-    def resnet152():
-        """ResNet with 152 layers.
-        
-        Returns:
-            [type] -- [description]
-        """
-        model = ResNet(Bottleneck, [3, 8, 36, 3])
-        return model
+def resnet152():
+    """ResNet with 152 layers.
+    
+    Returns:
+        ResNet -- ResNet with 152 layers
+    """
+    model = ResNet(Bottleneck, [3, 8, 36, 3])
+    return model

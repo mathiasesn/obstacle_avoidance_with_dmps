@@ -43,7 +43,6 @@ class ModifiedResNet(nn.Module):
             use_gpu {bool} -- (default: {True})
         """
         super(ModifiedResNet, self).__init__()
-
         self.model = psp_models['resnet18'.lower()]()
         self.model = nn.DataParallel(self.model) # implements data parallelism at the module level
     

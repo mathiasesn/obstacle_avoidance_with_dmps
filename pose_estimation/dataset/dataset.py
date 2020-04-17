@@ -81,7 +81,7 @@ class PoseDataset(data.Dataset):
                     input_line = input_line[:-1]
 
                 self.list_rgb.append(f"{self.root}/data/{item:02d}/rgb/{input_line}.png")
-                self.list_rgb.append(f"{self.root}/data/{item:02d}/depth/{input_line}.png")
+                self.list_depth.append(f'{self.root}/data/{item:02d}/depth/{input_line}.png')
 
                 if self.mode == "eval":
                     self.list_label.append(f"{self.root}/segnet_results/{item:02d}_label/{input_line}_label.png")
@@ -92,7 +92,7 @@ class PoseDataset(data.Dataset):
                 self.list_rank.append(int(input_line))
 
             meta_file = open(f"{self.root}/data/{item:02d}/gt.yml", 'r')
-            self.meta[item] = yaml.load(meta_file)
+            self.meta[item] = yaml.load(meta_file, Loader=yaml.FullLoader)
             self.pt[item] = ply_vtx(f'{self.root}/models/obj_{item:02d}.ply')
 
             print(f'Object {item} buffer loaded')
@@ -140,7 +140,7 @@ class PoseDataset(data.Dataset):
         if self.add_noise:
             img = self.trancolor(img)
         
-        img = np.array(img)[:,:,3]
+        img = np.array(img)[:, :, :3]
         img = np.transpose(img, (2,0,1))
         img_masked = img
 
@@ -220,17 +220,17 @@ class PoseDataset(data.Dataset):
                torch.from_numpy(model_pts.astype(np.float32)), \
                torch.LongTensor([self.objs.index(obj)])
         
-        def __len__(self):
-            return self.length
+    def __len__(self):
+        return self.length
 
-        def get_sym_list(self):
-            return self.symmetry_obj_idx
+    def get_sym_list(self):
+        return self.symmetry_obj_idx
 
-        def get_num_pts_mesh(self):
-            if self.refine:
-                return self.num_pt_mesh_large
-            else:
-                return self.num_pt_mesh_small
+    def get_num_pts_mesh(self):
+        if self.refine:
+            return self.num_pt_mesh_large
+        else:
+            return self.num_pt_mesh_small
 
 
 def mask_2_bbox(mask):
@@ -285,8 +285,8 @@ def get_bbox(bbox):
             r_b = border_list[i+1]
             break
     
-    r_b = cmax - cmin
-    for i in rage(len(border_list)):
+    c_b = cmax - cmin
+    for i in range(len(border_list)):
         if c_b > border_list[i] and c_b < border_list[i+1]:
             c_b = border_list[i+1]
             break
