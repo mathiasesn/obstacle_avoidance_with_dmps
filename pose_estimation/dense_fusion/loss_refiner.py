@@ -1,3 +1,9 @@
+"""Loss refiner
+"""
+
+import os
+import sys
+sys.path.insert(0, os.getcwd()) # sets the root to the current working directory
 from torch.nn.modules.loss import _Loss
 from torch.autograd import Variable
 import torch
@@ -6,6 +12,7 @@ import numpy as np
 import torch.nn as nn
 import random
 import torch.backends.cudnn as cudnn
+from pose_estimation.dense_fusion.knn.__init__ import KNearestNeighbor
 
 
 def loss_calculation(pred_r, pred_t, target, model_points, idx, points, num_point_mesh, sym_list):
@@ -19,11 +26,12 @@ def loss_calculation(pred_r, pred_t, target, model_points, idx, points, num_poin
         idx {int} -- index
         points {[type]} -- input points
         num_point_mesh {int} -- number of points in mesh
-        sym_list {[type]} -- [description]
+        sym_list {list} -- list of symmetric objects
     
     Returns:
         [type] -- [description]
     """
+    knn = KNearestNeighbor(1)
     pred_r = pred_r.view(1, 1, -1)
     pred_t = pred_t.view(1, 1, -1)
     bs, num_p, _ = pred_r.size()
@@ -54,8 +62,9 @@ def loss_calculation(pred_r, pred_t, target, model_points, idx, points, num_poin
     if idx[0].item() in sym_list:
         target = target[0].transpose(1, 0).contiguous().view(3, -1)
         pred = pred.permute(2, 0, 1).contiguous().view(3, -1)
-        inds = torch.sort(target.unsqueeze(0), pred.unsqueeze(0))
-        target = torch.index_select(target, 1, inds.view(-1) - 1)
+        inds = knn(target.unsqueeze(0), pred.unsqueeze(0))
+        # target = torch.index_select(target, 1, inds.view(-1) - 1)
+        target = torch.index_select(target, 1, inds.view(-1).detach() - 1)
         target = target.view(3, bs * num_p, num_point_mesh).permute(1, 2, 0).contiguous()
         pred = pred.view(3, bs * num_p, num_point_mesh).permute(1, 2, 0).contiguous()
 
@@ -73,10 +82,11 @@ def loss_calculation(pred_r, pred_t, target, model_points, idx, points, num_poin
     new_target = torch.bmm((new_target - ori_t), ori_base).contiguous()
 
     # print('------------> ', dis.item(), idx[0].item())
+    del knn
     return dis, new_points.detach(), new_target.detach()
 
 
-class LossRefine(_Loss):
+class Loss_refine(_Loss):
     """Loss refine
     """
     def __init__(self, num_points_mesh, sym_list):
@@ -84,10 +94,10 @@ class LossRefine(_Loss):
         
         Arguments:
             _Loss {torch.nn.modules.loss} -- base class for neurale network modules
-            num_points_mesh {} -- number of points in mesh
-            sym_list {[type]} -- [description]
+            num_points_mesh {int} -- number of points in mesh
+            sym_list {list} -- list of symmetric objects
         """
-        super(LossRefine, self).__init__(True)
+        super(Loss_refine, self).__init__(True)
         self.num_pt_mesh = num_points_mesh
         self.sym_list = sym_list
 

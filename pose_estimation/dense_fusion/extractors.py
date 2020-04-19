@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 
 def load_weights_sequential(target, source_state):
-    """[summary]
+    """Load weights sequential
     
     Arguments:
         target {[type]} -- [description]
@@ -23,14 +23,14 @@ def load_weights_sequential(target, source_state):
     target.load_state_dict(new_dict)
 
 def conv3x3(in_planes, out_planes, stride=1, dilation=1):
-    """[summary]
+    """Convolution 3x3
     
     Arguments:
         in_planes {[type]} -- [description]
         out_planes {[type]} -- [description]
     
     Keyword Arguments:
-        stride {int} -- the stride use for convulution (default: {1})
+        stride {int} -- the stride use for convolution (default: {1})
         dilation {int} -- dilation size (default: {1})
     
     Returns:
@@ -41,8 +41,10 @@ def conv3x3(in_planes, out_planes, stride=1, dilation=1):
 
 
 class BasicBlock(nn.Module):
-    """BasicBlock for ResNet. Structure: layer 1 --> conv + relu and layer 2 --> 
-    conv + downsample + input + relu.
+    """BasicBlock for ResNet.
+        Structure: 
+            layer 1: conv + relu
+            layer 2: conv + downsample + input + relu.
     """
     expansion = 1
 
@@ -54,9 +56,9 @@ class BasicBlock(nn.Module):
             planes {[type]} -- [description]
         
         Keyword Arguments:
-            stride {int} -- [description] (default: {1})
-            downsample {[type]} -- [description] (default: {None})
-            dilation {int} -- [description] (default: {1})
+            stride {int} -- the stride use for convolution (default: {1})
+            downsample (default: {None})
+            dilation {int} -- dilation size (default: {1})
         """
         super(BasicBlock, self).__init__()
         self.conv1 = conv3x3(inplanes, planes, stride=stride, dilation=dilation)
@@ -91,8 +93,11 @@ class BasicBlock(nn.Module):
 
 
 class Bottleneck(nn.Module):
-    """Bottleneck for ResNet. Structure: layer 1 --> conv + relu, layer 2 -->
-    conv + relu and layers 3 --> conv + downsample + input + relu.
+    """Bottleneck for ResNet. 
+        Structure:
+            layer 1: conv + relu
+            layer 2: conv + relu
+            layer 3: conv + downsample + input + relu.
     """
     expansion = 4
 
@@ -104,16 +109,16 @@ class Bottleneck(nn.Module):
             planes {[type]} -- [description]
         
         Keyword Arguments:
-            stride {int} -- (default: {1})
+            stride {int} (default: {1})
             downsample -- downsampling method (default: {None})
-            dilation {int} -- (default: {1})
+            dilation {int} (default: {1})
         """
-        super(Bottlenect, self).__init__()
+        super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               dilation=dilation, padding=dilation, bias=False)
-        self.conv3 = nn.Conv2d(planes, planes*4, kernel_size=1, bias=False)
-        self.relu = nn.ReLu(inplace=True)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, dilation=dilation,
+                               padding=dilation, bias=False)
+        self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
+        self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
 
@@ -148,19 +153,19 @@ class Bottleneck(nn.Module):
 class ResNet(nn.Module):
     """Residual Neural Network(ResNet)
     """
-    def __init__(self, block, layers=(3,4,23,3)):
+    def __init__(self, block, layers=(3, 4, 23, 3)):
         """Creates a ResNet object.
         
         Arguments:
-            block {BasicBlock or Bottleneck} -- 
+            block {BasicBlock or Bottleneck}
         
         Keyword Arguments:
             layers {tuple} -- number of layers (default: {(3,4,23,3)})
         """
         self.inplanes = 64
         super(ResNet, self).__init__()
-
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
+                               bias=False)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0])
@@ -171,7 +176,7 @@ class ResNet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2./n))
+                m.weight.data.normal_(0, math.sqrt(2. / n))
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -192,9 +197,9 @@ class ResNet(nn.Module):
             nn.Sequential -- ResNet layer
         """
         downsample = None
-        if stride != 1 or self.inplanes != (planes*block.expansion):
+        if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, (planes*block.expansion),
+                nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False)
             )
 
@@ -202,7 +207,7 @@ class ResNet(nn.Module):
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes, dilation=dilation))
-    
+
         return nn.Sequential(*layers)
     
     def forward(self, x):
@@ -220,12 +225,12 @@ class ResNet(nn.Module):
 
         x = self.layer1(x)
         x = self.layer2(x)
-        x3 = self.layer3(x)
-        x = self.layer4(x3)
+        x_3 = self.layer3(x)
+        x = self.layer4(x_3)
 
-        return x, x3
+        return x, x_3
 
-def resnet18():
+def resnet18(pretrained=False):
     """ResNet with 18 layers.
     
     Returns:
@@ -243,7 +248,7 @@ def resnet34():
     model = ResNet(BasicBlock, [3, 4, 6, 3])
     return model
 
-def resnet50():
+def resnet50(pretrained=False):
     """ResNet with 50 layers.
     
     Returns:
@@ -252,7 +257,7 @@ def resnet50():
     model = ResNet(Bottleneck, [3, 4, 6, 3])
     return model
 
-def resnet101():
+def resnet101(pretrained=False):
     """ResNet with 101 layers.
     
     Returns:
@@ -261,7 +266,7 @@ def resnet101():
     model = ResNet(Bottleneck, [3, 4, 23, 3])
     return model
 
-def resnet152():
+def resnet152(pretrained=False):
     """ResNet with 152 layers.
     
     Returns:

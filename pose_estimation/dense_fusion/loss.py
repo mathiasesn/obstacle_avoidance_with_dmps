@@ -2,6 +2,9 @@
 """
 
 
+import os
+import sys
+sys.path.insert(0, os.getcwd()) # sets the root to the current working directory
 from torch.nn.modules.loss import _Loss
 from torch.autograd import Variable
 import torch
@@ -10,6 +13,7 @@ import numpy as np
 import torch.nn as nn
 import random
 import torch.backends.cudnn as cudnn
+from pose_estimation.dense_fusion.knn.__init__ import KNearestNeighbor
 
 
 def loss_calculation(pred_r, pred_t, pred_c, target, model_points, idx, points, w, refine, num_point_mesh, sym_list):
@@ -31,6 +35,7 @@ def loss_calculation(pred_r, pred_t, pred_c, target, model_points, idx, points, 
     Returns:
         [type] -- loss, 
     """
+    knn = KNearestNeighbor(1)
     bs, num_p, _ = pred_c.size()
 
     pred_r = pred_r / (torch.norm(pred_r, dim=2).view(bs, num_p, 1))
@@ -61,8 +66,9 @@ def loss_calculation(pred_r, pred_t, pred_c, target, model_points, idx, points, 
         if idx[0].item() in sym_list:
             target = target[0].transpose(1, 0).contiguous().view(3, -1)
             pred = pred.permute(2, 0, 1).contiguous().view(3, -1)
-            inds = torch.sort(target.unsqueeze(0), pred.unsqueeze(0))
-            target = torch.index_select(target, 1, inds.view(-1) - 1)
+            inds = knn(target.unsqueeze(0), pred.unsqueeze(0))
+            # target = torch.index_select(target, 1, inds.view(-1) - 1)
+            target = torch.index_select(target, 1, inds.view(-1).detach() - 1)
             target = target.view(3, bs * num_p, num_point_mesh).permute(1, 2, 0).contiguous()
             pred = pred.view(3, bs * num_p, num_point_mesh).permute(1, 2, 0).contiguous()
 
@@ -73,7 +79,7 @@ def loss_calculation(pred_r, pred_t, pred_c, target, model_points, idx, points, 
     pred_c = pred_c.view(bs, num_p)
     how_max, which_max = torch.max(pred_c, 1)
     dis = dis.view(bs, num_p)
-
+    
 
     t = ori_t[which_max[0]] + points[which_max[0]]
     points = points.view(1, bs * num_p, 3)
@@ -87,6 +93,7 @@ def loss_calculation(pred_r, pred_t, pred_c, target, model_points, idx, points, 
     new_target = torch.bmm((new_target - ori_t), ori_base).contiguous()
 
     # print('------------> ', dis[0][which_max[0]].item(), pred_c[0][which_max[0]].item(), idx[0].item())
+    del knn
     return loss, dis[0][which_max[0]], new_points.detach(), new_target.detach()
 
 
@@ -99,7 +106,7 @@ class Loss(_Loss):
         Arguments:
             _Loss {torch.nn.modules.loss} -- base class for neurale network modules
             num_points_mesh {[type]} -- number of points in mesh
-            sym_list {[type]} -- [description]
+            sym_list {list} -- list of symmetric objects
         """
         super(Loss, self).__init__(True)
         self.num_pt_mesh = num_points_mesh

@@ -1,4 +1,4 @@
-"""[summary]
+"""Dataset
 """
 
 
@@ -221,12 +221,27 @@ class PoseDataset(data.Dataset):
                torch.LongTensor([self.objs.index(obj)])
         
     def __len__(self):
+        """length
+        
+        Returns:
+            int -- length of self
+        """
         return self.length
 
     def get_sym_list(self):
+        """Get symmetric list
+        
+        Returns:
+            int -- index of symmetric objects
+        """
         return self.symmetry_obj_idx
 
-    def get_num_pts_mesh(self):
+    def get_num_points_mesh(self):
+        """Get number of points in mesh
+        
+        Returns:
+            int -- number of points in mesh
+        """
         if self.refine:
             return self.num_pt_mesh_large
         else:
