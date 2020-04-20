@@ -47,7 +47,7 @@ def main(args):
     refiner.cuda()
 
     if opt.resume_posenet != '':
-        estimator.load_state_dict(torch.load(f'{args.out_file}/{args.resume_posenet}'))
+        estimator.load_state_dict(torch.load(f'{opt.outf}/{opt.resume_posenet}'))
 
     if opt.resume_refinenet != '':
         refiner.load_state_dict(torch.load(f'{opt.outf}/{opt.resume_refinenet}'))
@@ -146,7 +146,7 @@ def main(args):
         
         print(f'--------- Epoch {epoch} train finished ---------')
 
-        time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - start_time))
+        time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
         logger = setup_logger(f'epoch{epoch}_test', os.path.join(opt.log_dir, f'epoch_{epoch}_test_log.txt'))
         logger.info(f'Train time {time_str}, Training started')
         
@@ -176,14 +176,14 @@ def main(args):
 
             test_dis += dis.item()
 
-            time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - start_time))
+            time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
             logger.info(f'Test time {0} Test Frame No.{test_count} dis:{dis}')
 
             test_count += 1
         
         test_dis = test_dis / test_count
 
-        time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - start_time))
+        time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
         logger.info(f'Test time {time_str} Epoch {epoch} TEST FINISH Avg dis: {test_dis}')
         
         if test_dis <= best_test:
@@ -232,7 +232,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='linemod', help='the dataset used')
-    parser.add_argument('--dataset_root', type=str, default ='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root dir')
+    parser.add_argument('--dataset_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root dir')
     parser.add_argument('--batch_size', type=int, default=8, help='batch size')
     parser.add_argument('--workers', type=int, default=10, help='number of data loading workers')
     parser.add_argument('--lr', default=0.0001, help='learning rate')
@@ -244,9 +244,9 @@ if __name__ == '__main__':
     parser.add_argument('--noise_trans', default=0.03, help='range of the random noise of translation added to the training data')
     parser.add_argument('--iteration', type=int, default = 2, help='number of refinement iterations')
     parser.add_argument('--nepoch', type=int, default=500, help='max number of epochs to train')
-    parser.add_argument('--resume_posenet', type=str, default = '',  help='resume PoseNet model')
-    parser.add_argument('--resume_refinenet', type=str, default = '',  help='resume PoseRefineNet model')
-    parser.add_argument('--start_epoch', type=int, default = 1, help='which epoch to start')
+    parser.add_argument('--resume_posenet', type=str, default='',  help='resume PoseNet model')
+    parser.add_argument('--resume_refinenet', type=str, default='',  help='resume PoseRefineNet model')
+    parser.add_argument('--start_epoch', type=int, default=1, help='which epoch to start')
     opt = parser.parse_args()
 
     main(opt)

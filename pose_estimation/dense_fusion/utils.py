@@ -2,6 +2,7 @@
 """
 
 import logging
+from vision_sandbox import _C as knn_pytorch
 
 def setup_logger(logger_name, log_file, level=logging.INFO):
     """Setup logger
@@ -29,3 +30,20 @@ def setup_logger(logger_name, log_file, level=logging.INFO):
     l.addHandler(streamHandler)
 
     return l
+
+
+class KNearestNeighbor(Function):
+  """ Compute k nearest neighbors for each query point.
+  """
+  def __init__(self, k):
+    self.k = k
+
+  def forward(self, ref, query):
+    ref = ref.float().cuda()
+    query = query.float().cuda()
+
+    inds = torch.empty(query.shape[0], self.k, query.shape[2]).long().cuda()
+
+    knn_pytorch.knn(ref, query, inds)
+
+    return inds
