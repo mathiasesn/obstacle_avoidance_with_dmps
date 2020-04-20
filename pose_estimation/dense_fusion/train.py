@@ -20,10 +20,10 @@ import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
 from pose_estimation.dataset.linemod.dataset import PoseDataset as PoseDataset_linemod
-from pose_estimation.dense_fusion.network import PoseNet, PoseRefineNet
-from pose_estimation.dense_fusion.loss import Loss
-from pose_estimation.dense_fusion.loss_refiner import Loss_refine
-from pose_estimation.dense_fusion.utils import setup_logger
+from pose_estimation.dense_fusion.lib.network import PoseNet, PoseRefineNet
+from pose_estimation.dense_fusion.lib.loss import Loss
+from pose_estimation.dense_fusion.lib.loss_refiner import Loss_refine
+from pose_estimation.dense_fusion.lib.utils import setup_logger
 
 
 def main(args):
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     parser.add_argument('--decay_margin', default=0.016, help='margin to decay lr & w')
     parser.add_argument('--refine_margin', default=0.013, help='margin to start the training of iterative refinement')
     parser.add_argument('--noise_trans', default=0.03, help='range of the random noise of translation added to the training data')
-    parser.add_argument('--iteration', type=int, default = 2, help='number of refinement iterations')
+    parser.add_argument('--iteration', type=int, default=2, help='number of refinement iterations')
     parser.add_argument('--nepoch', type=int, default=500, help='max number of epochs to train')
     parser.add_argument('--resume_posenet', type=str, default='',  help='resume PoseNet model')
     parser.add_argument('--resume_refinenet', type=str, default='',  help='resume PoseRefineNet model')
