@@ -19,6 +19,7 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
+from progressbar import *
 from pose_estimation.dataset.linemod.dataset import PoseDataset as PoseDataset_linemod
 from pose_estimation.dense_fusion.lib.network import PoseNet, PoseRefineNet
 from pose_estimation.dense_fusion.lib.loss import Loss
@@ -91,9 +92,11 @@ def main(args):
     st_time = time.time()
 
     for epoch in range(opt.start_epoch, opt.nepoch):
-        logger = setup_logger(f'epoch{epoch}', os.path.join(opt.log_dir, f'epoch_{epoch}_log.txt'))
         time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
-        logger.info(f'Train time {time_str}, Training started')
+        # logger = setup_logger(f'epoch{epoch}', os.path.join(opt.log_dir, f'epoch_{epoch}_log.txt'))
+        # logger.info(f'Train time {time_str}, Training started')
+        fw = open(f'{opt.log_dir}/epoch_{epoch}_log.txt', 'w')
+        fw.write(f'Train time {time_str}, Training started\n')
 
         train_count = 0
         train_dis_avg = 0.0
@@ -106,6 +109,10 @@ def main(args):
         optimizer.zero_grad()
 
         for rep in range(opt.repeat_epoch):
+
+            widgets = [FormatLabel(''), ' ', Percentage(), ' ', Bar('#'), ' ', RotatingMarker()]
+            progress_bar = ProgressBar(widgets=widgets, maxval=len(dataset)).start()
+
             for i, data in enumerate(dataloader, 0):
                 points, choose, img, target, model_points, idx = data
 
@@ -132,7 +139,10 @@ def main(args):
 
                 if train_count % opt.batch_size == 0:
                     time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
-                    logger.info(f'Train time {time_str} Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{train_dis_avg/opt.batch_size}')
+                    # logger.info(f'Train time {time_str} Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{train_dis_avg/opt.batch_size}')
+                    fw.write(f'Train time {time_str} Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{train_dis_avg/opt.batch_size}\n')
+
+                    widgets[0] = FormatLabel(f'Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{train_dis_avg/opt.batch_size}')
                     
                     optimizer.step()
                     optimizer.zero_grad()
@@ -143,18 +153,29 @@ def main(args):
                         torch.save(refiner.state_dict(), f'{opt.outf}/pose_refine_model_current.pth')
                     else:
                         torch.save(estimator.state_dict(), f'{opt.outf}/pose_model_current.pth')
+                
+                progress_bar.update(i+1)
+            
+            progress_bar.finish()
+
+        fw.close()
         
         print(f'--------- Epoch {epoch} train finished ---------')
 
         time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
-        logger = setup_logger(f'epoch{epoch}_test', os.path.join(opt.log_dir, f'epoch_{epoch}_test_log.txt'))
-        logger.info(f'Train time {time_str}, Training started')
+        # logger = setup_logger(f'epoch{epoch}_test', os.path.join(opt.log_dir, f'epoch_{epoch}_test_log.txt'))
+        # logger.info(f'Train time {time_str}, Training started')
+        fw = open(f'{opt.log_dir}/epoch_{epoch}_test_log.txt', 'w')
+        fw.write(f'Train time {time_str}, Training started\n')
         
         test_dis = 0.0
         test_count = 0
 
         estimator.eval()
         refiner.eval()
+
+        widgets = [FormatLabel(''), ' ', Percentage(), ' ', Bar('#'), ' ', RotatingMarker()]
+        progress_bar = ProgressBar(widgets=widgets, maxval=len(test_dataset)).start()
 
         for j, data in enumerate(testdataloader, 0):
             points, choose, img, target, model_points, idx = data
@@ -177,17 +198,26 @@ def main(args):
             test_dis += dis.item()
 
             time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
-            logger.info(f'Test time {time_str} Test Frame No.{test_count} dis:{dis}')
+            # logger.info(f'Test time {time_str} Test Frame No.{test_count} dis:{dis}')
+            fw.write(f'Test time {time_str} Test Frame No.{test_count} dis:{dis}\n')
 
             test_count += 1
+
+            widgets[0] = FormatLabel(f'Test Frame No.{test_count} dis:{dis}')
+            progress_bar.update(j+1)
+        
+        progress_bar.finish()
         
         test_dis = test_dis / test_count
 
         time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
-        logger.info(f'Test time {time_str} Epoch {epoch} TEST FINISH Avg dis: {test_dis}')
+        # logger.info(f'Test time {time_str} Epoch {epoch} TEST FINISH Avg dis: {test_dis}')
+        fw.write(f'Test time {time_str} Epoch {epoch} TEST FINISH Avg dis: {test_dis}\n')
+        fw.close()
         
         if test_dis <= best_test:
             best_test = test_dis
+
             if opt.refine_start:
                 torch.save(refiner.state_dict(), f'{opt.outf}/pose_refine_model_{epoch}_{test_dis}.pth')
             else:

@@ -39,9 +39,9 @@ def main(opt):
     output_result_dir = 'pose_estimation/dense_fusion/logs/linemod'
     knn = KNearestNeighbor(1)
 
-    estimator = PoseNet(num_points = num_points, num_obj = num_objects)
+    estimator = PoseNet(num_points=num_points, num_obj=num_objects)
     estimator.cuda()
-    refiner = PoseRefineNet(num_points = num_points, num_obj = num_objects)
+    refiner = PoseRefineNet(num_points=num_points, num_obj=num_objects)
     refiner.cuda()
     estimator.load_state_dict(torch.load(opt.model))
     refiner.load_state_dict(torch.load(opt.refine_model))
@@ -65,6 +65,7 @@ def main(opt):
 
     success_count = [0 for i in range(num_objects)]
     num_count = [0 for i in range(num_objects)]
+
     fw = open(f'{output_result_dir}/eval_result_logs.txt', 'w')
 
     widgets = [FormatLabel(''), ' ', Percentage(), ' ', Bar('#'), ' ', RotatingMarker()]
@@ -74,7 +75,8 @@ def main(opt):
         points, choose, img, target, model_points, idx = data
 
         if len(points.size()) == 2:
-            print(f'No.{i} NOT Pass! Lost detection!')
+            # print(f'No.{i} NOT Pass! Lost detection!')
+            widgets[0] = FormatLabel(f'No.{i} NOT Pass! Lost detection!')
             fw.write(f'No.{i} NOT Pass! Lost detection!\n')
             continue
         
@@ -152,10 +154,10 @@ def main(opt):
     
     for i in range(num_objects):
         print(f'Object {objlist[i]} success rate: {float(success_count[i]) / num_count[i]}')
-        fw.write(f'Object {objlist[i]} success rate: {float(success_count[i]) / num_count[i]}')
+        fw.write(f'Object {objlist[i]} success rate: {float(success_count[i]) / num_count[i]}\n')
 
     print(f'ALL success rate: {float(sum(success_count)) / sum(num_count)}')
-    fw.write(f'ALL success rate: {float(sum(success_count)) / sum(num_count)}')
+    fw.write(f'ALL success rate: {float(sum(success_count)) / sum(num_count)}\n')
 
     fw.close()
 

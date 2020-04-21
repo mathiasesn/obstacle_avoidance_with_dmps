@@ -96,7 +96,7 @@ class PoseDataset(data.Dataset):
             self.pt[item] = ply_vtx(f'{self.root}/models/obj_{item:02d}.ply')
 
             print(f'Object {item} buffer loaded')
-        
+
         self.length = len(self.list_rgb)
 
         self.cam_cx = 325.26110
