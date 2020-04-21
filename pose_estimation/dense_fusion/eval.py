@@ -152,9 +152,9 @@ if __name__ == '__main__':
     print(f'Starting {sys.argv[0]} with arguments: {sys.argv[1:]}')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset_root', type=str, default='', help='dataset root directory')
-    parser.add_argument('--model', type=str, default='', help='PoseNet model')
-    parser.add_argument('--refine_mode', type=str, default='', help='PoseRefineNet model')
+    parser.add_argument('--dataset_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root directory')
+    parser.add_argument('--model', type=str, default='', help='PoseNet model (full path)')
+    parser.add_argument('--refine_model', type=str, default='', help='PoseRefineNet model (full path)')
     opt = parser.parse_args()
 
     main(opt)

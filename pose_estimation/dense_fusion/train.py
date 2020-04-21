@@ -177,7 +177,7 @@ def main(args):
             test_dis += dis.item()
 
             time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
-            logger.info(f'Test time {0} Test Frame No.{test_count} dis:{dis}')
+            logger.info(f'Test time {time_str} Test Frame No.{test_count} dis:{dis}')
 
             test_count += 1
         
