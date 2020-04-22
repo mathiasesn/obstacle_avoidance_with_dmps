@@ -2,8 +2,6 @@
 
 The following work is based upon: [DenseFusion](https://github.com/j96w/DenseFusion).
 
-For more information about DenseFusion [ARCHITECTURE.md](ARCHITECTURE.md).
-
 ## Requirements
 
 - python 3.6.10
