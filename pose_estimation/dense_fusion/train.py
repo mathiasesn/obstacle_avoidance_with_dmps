@@ -74,7 +74,7 @@ def main(args):
     opt.sym_list = dataset.get_sym_list()
     opt.num_points_mesh = dataset.get_num_points_mesh()
 
-    print(f'--------- Dataset loaded! ---------')
+    print(f'Dataset loaded!')
     print(f'length of the training set: {len(dataset)}')
     print(f'length of the testing set: {len(testdataloader)}')
     print(f'number of sample points on mesh: {opt.num_points_mesh}')
@@ -142,7 +142,7 @@ def main(args):
                     # logger.info(f'Train time {time_str} Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{train_dis_avg/opt.batch_size}')
                     fw.write(f'Train time {time_str} Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{train_dis_avg/opt.batch_size}\n')
 
-                    widgets[0] = FormatLabel(f'Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{train_dis_avg/opt.batch_size}')
+                    widgets[0] = FormatLabel(f'Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{(train_dis_avg/opt.batch_size):.6f}')
                     
                     optimizer.step()
                     optimizer.zero_grad()
@@ -157,10 +157,11 @@ def main(args):
                 progress_bar.update(i+1)
             
             progress_bar.finish()
+            print(f'Repetition {rep} of {opt.repeat_epoch} done!')
 
         fw.close()
         
-        print(f'--------- Epoch {epoch} train finished ---------')
+        print(f'Epoch {epoch} train finished')
 
         time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
         # logger = setup_logger(f'epoch{epoch}_test', os.path.join(opt.log_dir, f'epoch_{epoch}_test_log.txt'))
@@ -199,11 +200,11 @@ def main(args):
 
             time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
             # logger.info(f'Test time {time_str} Test Frame No.{test_count} dis:{dis}')
-            fw.write(f'Test time {time_str} Test Frame No.{test_count} dis:{dis}\n')
+            fw.write(f'Test time {time_str} Test Frame No.{test_count} dis:{dis[0]}\n')
+            widgets[0] = FormatLabel(f'Test Frame No.{test_count} dis:{dis[0]:.6f}')
 
             test_count += 1
 
-            widgets[0] = FormatLabel(f'Test Frame No.{test_count} dis:{dis}')
             progress_bar.update(j+1)
         
         progress_bar.finish()
@@ -223,7 +224,7 @@ def main(args):
             else:
                 torch.save(estimator.state_dict(), f'{opt.outf}/pose_model_{epoch}_{test_dis}.pth')
 
-            print(f'--------- Epoch {epoch} --> best test model saved with Avg dis: {test_dis} ---------')
+            print(f'Epoch {epoch} --> best test model saved with Avg dis: {test_dis}')
         
         if best_test < opt.decay_margin and not opt.decay_start:
             opt.decay_start = True
@@ -247,7 +248,7 @@ def main(args):
             opt.sym_list = dataset.get_sym_list()
             opt.num_points_mesh = dataset.get_num_points_mesh()
 
-            print(f'--------- Dataset loaded! ---------')
+            print(f'Dataset loaded!')
             print(f'length of the training set: {len(dataset)}')
             print(f'length of the testing set: {len(test_dataset)}')
             print(f'number of sample points on mesh: {opt.num_points_mesh}')

@@ -139,11 +139,11 @@ def main(opt):
         if dis < diameter[idx[0].item()]:
             success_count[idx[0].item()] += 1
             # print(f'No.{i} of {testdataset.length} Pass! Distance: {dis}')
-            widgets[0] = FormatLabel(f'No.{i} Pass! Distance: {dis}')
+            widgets[0] = FormatLabel(f'No.{i} Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
             fw.write(f'No.{i} Pass! Distance: {dis}\n')
         else:
             # print(f'No.{i} of {testdataset.length} NOT Pass! Distance: {dis}')
-            widgets[0] = FormatLabel(f'No.{i} NOT Pass! Distance: {dis}')
+            widgets[0] = FormatLabel(f'No.{i} NOT Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
             fw.write(f'No.{i} NOT Pass! Distance: {dis}\n')
         
         num_count[idx[0].item()] += 1
