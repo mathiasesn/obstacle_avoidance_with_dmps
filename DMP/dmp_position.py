@@ -7,7 +7,7 @@ from obstacle import Obstacle
 from repulsive import Ct, Ct_coupling
 
 class PositionDMP():
-    def __init__(self, n_bfs=10, alpha=48.0, beta=None, cs_alpha=None, cs=None):
+    def __init__(self, n_bfs=10, alpha=48.0, beta=None, cs_alpha=None, cs=None, obstacles=None):
         self.n_bfs = n_bfs
         self.alpha = alpha
         self.beta = beta if beta is not None else self.alpha / 4
@@ -29,6 +29,8 @@ class PositionDMP():
         self.p0 = np.zeros(3)
         self.gp = np.zeros(3)
 
+        self.obstacles = obstacles
+
         self.reset()
 
     def step(self, x, dt, tau):
@@ -40,8 +42,12 @@ class PositionDMP():
         # TODO: Implement the transformation system differential equation for the acceleration, given that you know the
         # values of the following variables:
         # self.alpha, self.beta, self.gp, self.p, self.dp, tau, x
-        sphere  = Obstacle([0.575, 0.30, 0.45])
+
+        ###### OLD ######
+        #sphere  = Obstacle([0.575, 0.30, 0.45])
         #sphere = Obstacle([0., 0.25, 0.80])
+        ###### NEW ######
+        sphere = self.obstacles
 
         self.ddp = (self.alpha*( self.beta * (self.gp - self.p) - tau*self.dp ) + fp(x) + Ct_coupling(self.p, self.dp, sphere) )/(tau*tau)
 

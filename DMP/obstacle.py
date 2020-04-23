@@ -9,6 +9,7 @@ class Obstacle:
         self.r = radius
         self.discrete_steps = discrete_steps
         self.create_sphere()
+        self.__cur_indx_move_traj = 0 # current indx of moving trajectory
 
     def create_sphere(self):
         phi     = np.linspace(0, np.pi, self.discrete_steps)
@@ -17,6 +18,23 @@ class Obstacle:
         self.x = self.r * np.sin(phi) * np.cos(theta) + self.pos[0]
         self.y = self.r * np.sin(phi) * np.sin(theta) + self.pos[1]
         self.z = self.r * np.cos(phi)                 + self.pos[2]
+
+    def create_trajectory(self, to, steps):
+        """
+        Create a linear trajectory from initial position
+        to input parameters with resolution steps.
+        """
+        x_traj = np.linspace(self.pos[0], to[0], num=steps)
+        y_traj = np.linspace(self.pos[1], to[1], num=steps)
+        z_traj = np.linspace(self.pos[2], to[2], num=steps)
+        return np.dstack((x_traj,y_traj,z_traj))
+
+    def move_sphere(self, trajectory):
+        self.pos = trajectory[self.__cur_indx_move_traj]
+        self.create_sphere()
+        self.__cur_indx_move_traj += 1
+        
+
 
 
 # Matlab visualization of obstacle:
