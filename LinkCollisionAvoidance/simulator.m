@@ -19,6 +19,7 @@ obstacle.Pose = trvec2tform(obstaclePosition');
 %% Get configuration
 config = homeConfiguration(robot);
 config(6).JointPosition = pi/2;
+%config = randomConfiguration(robot);
 
 %% Find x0 and J0
 points      = getPoints(robot, config);     % get all points
@@ -29,38 +30,36 @@ x0 = points(:,x0index);                      % Get closest point
 J0 = jacobians(:,:,x0index);                 % Get corresponding Jacobian
 
 %% Compute dx0
+gammaL = 0;
+dx0 = -gammaL * nablaU(x0, obstaclePosition);
+dx0 = [dx0' 0 0 0]';
+
+%% Find xe and Je
+Je  = jacobians(:,:,7);
+xe  = [0.5545 0 0.7315]';         % LOAD DATA
+dxe = [0.5 0.5 0.5 0 0 0]';   % LOAD DATA
+%% Compute qd
+%thresh = 1e-4;
+%Je(abs(Je) < thresh) = 0;   % Round to avoid 'numerical explosion'
+%J0(abs(J0) < thresh) = 0;   % Round to avoid 'numerical explosion'
+%pinvJe = pinv(Je);
+%pinvJe(abs(pinvJe) < thresh) = 0; 
+
+%eyepinvJeJe = eye(7) - pinv(Je)*Je;
+%eyepinvJeJe(abs(eyepinvJeJe) < thresh) = 0;
+%step_1 = J0 * eyepinvJeJe;
+%step_1(abs(step_1) < thresh) = 0;
+
+qd = pinv(Je)*dxe + pinv( J0 * ( eye(7) - pinv(Je)*Je ) ) * ( dx0 - J0*pinv(Je)*dxe )
 
 %% Visualize
-points = getPoints(robot, config);
-
-
-
-show(obstacle)
+show(obstacle);
 hold on
-show(robot,config)
+show(robot,config);
 scatter3(points(1,:),points(2,:),points(3,:),500,...
     'MarkerEdgeColor','k',...
-        'MarkerFaceColor',[0 .75 .75])
+        'MarkerFaceColor',[0 .75 .75]);
 hold off
 axis equal
-lightangle(-45,0)
-view(50,25)
-
-
-
-%% Find closest point
-obstaclePos = [0.575 0.30 0.45]
-
-minindex = getClosestPoint(points, obstaclePos)
-
-obstacle = collisionSphere(0.1);
-obstacle.Pose = trvec2tform([.575 .30 .45]);
-
-
-show(robot,config)
-hold on
-show(obstacle)
-scatter3(points(minindex,1),points(minindex,2),points(minindex,3),500,...
-    'MarkerEdgeColor','k',...
-        'MarkerFaceColor',[0 .75 .75])
-hold off
+lightangle(-45,0);
+view(50,25);
