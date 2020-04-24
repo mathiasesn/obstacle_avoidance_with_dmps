@@ -30,7 +30,7 @@ def loss_calculation(semantic, target):
     pix_num = 480 * 640
 
     target = target.view(bs, -1).view(-1).contiguous()
-    semantic = semantic.view(bs, 22, pix_num).transpose(1, 2).contiguous().view(bs * pix_num, 22).contiguous()
+    semantic = semantic.view(bs, 14, pix_num).transpose(1, 2).contiguous().view(bs * pix_num, 14).contiguous()
     semantic_loss = cross_entropy_loss(semantic, target)
 
     return semantic_loss

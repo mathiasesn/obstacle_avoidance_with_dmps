@@ -22,7 +22,7 @@ from PIL import Image, ImageEnhance, ImageFilter
 class SegDataset(data.Dataset):
     """SegNet Dataset
     """
-    def __init__(self, root_dir, txt_list, use_noise, length):
+    def __init__(self, root_dir, txt_list, use_noise):
         """Create a SegDataset object
 
         Arguments:
@@ -48,7 +48,7 @@ class SegDataset(data.Dataset):
                 self.real_path.append(copy.deepcopy(line))
         f.close()
 
-        self.length = length
+        # self.length = length
         self.data_len = len(self.path)
         self.back_len = len(self.real_path)
 
@@ -71,37 +71,38 @@ class SegDataset(data.Dataset):
         """
         index = random.randint(0, self.data_len - 10)
 
-        label = np.array(Image.open(f'{self.root}/{self.path[index]-label.png}'))
-        meta = scio.loadmat(f'{self.root}/{self.path[index]}-meta.mat')
+        label = np.array(Image.open(f'{self.root}/mask/{self.path[index]}.png'))
+        # meta = scio.loadmat(f'{self.root}/{self.path[index]}-meta.mat')
 
-        img_path_idx = f'{self.root}/{self.path[index]}-color.png'
+        img_path_idx = f'{self.root}/rgb/{self.path[index]}.png'
         if not self.use_noise:
             rgb = np.array(Image.open(img_path_idx).convert('RGB'))
         else:
             rgb = np.array(self.trancolor(Image.open(img_path_idx).convert('RGB')))
         
-        if self.path[index][:8] == 'data_syn':
-            rgb = Image.open(img_path_idx).convert('RGB')
-            rgb = ImageEnhance.Brightness(rgb).enhance(1.5).filter(ImageFilter.GaussianBlur(radius=0.8))
-            rgb = np.array(self.trancolor(rgb))
+        # cv2.imshow('RGB', cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
+        # cv2.imshow('Label', label)
+        # cv2.waitKey(0)
+        
+        # if self.path[index][:8] == 'data_syn':
+        #     rgb = Image.open(img_path_idx).convert('RGB')
+        #     rgb = ImageEnhance.Brightness(rgb).enhance(1.5).filter(ImageFilter.GaussianBlur(radius=0.8))
+        #     rgb = np.array(self.trancolor(rgb))
             
-            seed = random.randint(0, self.back_len - 10)
-            img_path_seed = f'{self.root}/{self.path[seed]}-color.png'
-            back = np.array(self.trancolor(Image.open(img_path_seed).convert('RGB')))
-            back_label = np.array(Image.open(img_path_seed))
+        #     seed = random.randint(0, self.back_len - 10)
+        #     img_path_seed = f'{self.root}/rgb/{self.path[seed]}.png'
+        #     back = np.array(self.trancolor(Image.open(img_path_seed).convert('RGB')))
+        #     back_label = np.array(Image.open(img_path_seed))
             
-            mask = ma.getmaskarray(ma.masked_equal(label, 0))
+        #     mask = ma.getmaskarray(ma.masked_equal(label, 0))
             
-            back = np.transpose(back, (2, 0, 1))
-            rgb = np.transpose(rgb, (2, 0, 1))
-            rgb = rgb + np.random.normal(loc=0.0, scale=5.0, size=rgb.shape)
-            rgb = back * mask + rgb
-            label = back_label * mask + label
+        #     back = np.transpose(back, (2, 0, 1))
+        #     rgb = np.transpose(rgb, (2, 0, 1))
+        #     rgb = rgb + np.random.normal(loc=0.0, scale=5.0, size=rgb.shape)
+        #     rgb = back * mask + rgb
+        #     label = back_label * mask + label
             
-            rgb = np.transpose(rgb, (1, 2, 0))
-
-            cv2.imshow('rgb', rgb)
-            cv2.imshow('label', label)
+        #     rgb = np.transpose(rgb, (1, 2, 0))
         
         if self.use_noise:
             choice = random.randint(0, 3)
@@ -116,9 +117,14 @@ class SegDataset(data.Dataset):
                 rgb = np.flipud(rgb)
                 label = np.fliplr(label)
                 label = np.flipud(label)
+            
+            # cv2.imshow(f'RGB with choice: {choice}', rgb)
+            # cv2.imshow(f'Label with choice: {choice}', label)
+            # cv2.waitKey(0)
         
-        obj = meta['cls_indexes'].flatten().astype(np.int32)
-        obj = np.append(obj, [0], axis=0)
+        # obj = meta['cls_indexes'].flatten().astype(np.int32)
+        # obj = np.append(obj, [0], axis=0)
+
         target = copy.deepcopy(label)
 
         rgb = np.transpose(rgb, (2, 0, 1))
@@ -133,4 +139,4 @@ class SegDataset(data.Dataset):
         Returns:
             int -- lenght of object
         """
-        return self.length
+        return self.data_len

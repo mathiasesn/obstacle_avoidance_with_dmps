@@ -30,13 +30,14 @@ def main(args):
     random.seed(args.manual_seed)
     torch.manual_seed(args.manual_seed)
 
-    dataset = SegDataset(args.dataset_root, '', True, )
+    dataset = SegDataset(args.dataset_root, f'{args.dataset_root}/train.txt', True)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
 
-    test_dataset = SegDataset(args.dataset_root, '', False, )
+    test_dataset = SegDataset(args.dataset_root, f'{args.dataset_root}/train.txt', False)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True, num_workers=args.workers)
 
-    print(f'Length of dataset: {len(dataset)} Length of test dataset: {len(test_dataset)}')
+    print(f'Length of dataset: {len(dataset)}')
+    print(f'Length of test dataset: {len(test_dataset)}')
 
     model = segnet()
     model = model.cuda()
@@ -44,16 +45,16 @@ def main(args):
     if args.resume_model != '':
         checkpoint = torch.load(f'{args.model_save_pth}/{args.resume_model}')
         model.load_state_dict(checkpoint)
-    else:
-        checkpoint = torch.load('pose_estimation/dense_fusion/segmentation/vgg16/vgg16.npy')
-        model.load_state_dict(checkpoint)
+    # else:
+    #     checkpoint = torch.load('pose_estimation/dense_fusion/segmentation/vgg16/vgg16-397923af.pth')
+    #     model.load_state_dict(checkpoint)
     
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     criterion = Loss()
     best_val_cost = np.Inf
     st_time = time.time()
 
-    for epoch in range(1, args.n_epocs):
+    for epoch in range(1, args.n_epochs):
         model.train()
         train_all_cost = 0.0
         train_time = 0
@@ -139,21 +140,20 @@ def main(args):
             best_val_cost = test_all_cost
             torch.save(model.state_dict(), f'{args.model_save_pth}/model_{epoch}_{test_all_cost}.pth')
             print(f'NEW MODEL SAVED AT EPOCH {epoch} WITH AVERAGE CELOSS {test_all_cost:.6f}')
-        
 
 
 if __name__ == '__main__':
     print(f'Starting {sys.argv[0]}')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset_root', type=str, default='', help='dataset root dir')
+    parser.add_argument('--dataset_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed/data/01', help='dataset root dir')
     parser.add_argument('--batch_size', type=int, default=3, help='batch size (default: 3)')
     parser.add_argument('--n_epochs', type=int, default=600, help='epochs to train (default: 600)')
-    parser.add_argument('--workers', type=int, default=8, help='nunber of data loading workers (default: 8)')
+    parser.add_argument('--workers', type=int, default=1, help='nunber of data loading workers (default: 8)') # change to 8
     parser.add_argument('--lr', type=float, default=0.0001, help='learning rate (default: 0.0001)')
-    parser.add_argument('--logs_path', type=str, default='', help='path to save logs')
-    parser.add_argument('--model_save_pth', type=str, default='', help='path to saved models')
-    parser.add_argument('--log_dir', type=str, default='', help='path to save logs')
+    parser.add_argument('--logs_path', type=str, default='pose_estimation/dense_fusion/segmentation/logs/ape', help='path to save logs')
+    parser.add_argument('--model_save_pth', type=str, default='pose_estimation/dense_fusion/segmentation/trained_models/ape', help='path to saved models')
+    parser.add_argument('--log_dir', type=str, default='pose_estimation/dense_fusion/segmentation/logs/ape', help='path to save logs')
     parser.add_argument('--resume_model', type=str, default='', help='resume model name')
     args = parser.parse_args()
 
