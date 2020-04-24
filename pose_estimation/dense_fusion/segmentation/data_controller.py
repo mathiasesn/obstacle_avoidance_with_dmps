@@ -71,7 +71,7 @@ class SegDataset(data.Dataset):
         """
         index = random.randint(0, self.data_len - 10)
 
-        label = np.array(Image.open(f'{self.root}/mask/{self.path[index]}.png'))
+        label = np.array(Image.open(f'{self.root}/mask/{self.path[index]}.png').convert('L'))
         # meta = scio.loadmat(f'{self.root}/{self.path[index]}-meta.mat')
 
         img_path_idx = f'{self.root}/rgb/{self.path[index]}.png'

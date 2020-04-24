@@ -22,7 +22,7 @@ from PIL import Image
 from progressbar import *
 from pose_estimation.dense_fusion.segmentation.data_controller import SegDataset
 from pose_estimation.dense_fusion.segmentation.loss import Loss
-from pose_estimation.dense_fusion.segmentation.segnet import SegNet as segnet
+from pose_estimation.dense_fusion.segmentation.segnet import Segnet as segnet
 
 
 def main(args):
@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed/data/01', help='dataset root dir')
-    parser.add_argument('--batch_size', type=int, default=3, help='batch size (default: 3)')
+    parser.add_argument('--batch_size', type=int, default=1, help='batch size (default: 3)')
     parser.add_argument('--n_epochs', type=int, default=600, help='epochs to train (default: 600)')
     parser.add_argument('--workers', type=int, default=1, help='nunber of data loading workers (default: 8)') # change to 8
     parser.add_argument('--lr', type=float, default=0.0001, help='learning rate (default: 0.0001)')
