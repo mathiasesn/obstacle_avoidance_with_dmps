@@ -39,7 +39,7 @@ def main(args):
         opt.log_dir = 'pose_estimation/dense_fusion/logs/linemod'
         opt.repeat_epoch = 20
     else:
-        print(f'Unknown dataset, found: {args.dataset}')
+        print(f'Unknown dataset, found: {opt.dataset}')
         return
 
     estimator = PoseNet(num_points = opt.num_points, num_obj = opt.num_objects)
@@ -157,7 +157,7 @@ def main(args):
                 progress_bar.update(i+1)
             
             progress_bar.finish()
-            print(f'Repetition {rep} of {opt.repeat_epoch} done!')
+            print(f'Repetition {rep+1} of {opt.repeat_epoch} done!')
 
         fw.close()
         
@@ -213,6 +213,7 @@ def main(args):
 
         time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
         # logger.info(f'Test time {time_str} Epoch {epoch} TEST FINISH Avg dis: {test_dis}')
+        print(f'Test time {time_str} Epoch {epoch} TEST FINISH Avg dis: {test_dis}')
         fw.write(f'Test time {time_str} Epoch {epoch} TEST FINISH Avg dis: {test_dis}\n')
         fw.close()
         
@@ -265,7 +266,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, default='linemod', help='the dataset used')
     parser.add_argument('--dataset_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root dir')
     parser.add_argument('--batch_size', type=int, default=8, help='batch size')
-    parser.add_argument('--workers', type=int, default=10, help='number of data loading workers')
+    parser.add_argument('--workers', type=int, default=8, help='number of data loading workers')
     parser.add_argument('--lr', default=0.0001, help='learning rate')
     parser.add_argument('--lr_rate', default=0.3, help='learning rate decay rate')
     parser.add_argument('--w', default=0.015, help='learning rate')
@@ -275,8 +276,8 @@ if __name__ == '__main__':
     parser.add_argument('--noise_trans', default=0.03, help='range of the random noise of translation added to the training data')
     parser.add_argument('--iteration', type=int, default=2, help='number of refinement iterations')
     parser.add_argument('--nepoch', type=int, default=500, help='max number of epochs to train')
-    parser.add_argument('--resume_posenet', type=str, default='',  help='resume PoseNet model')
-    parser.add_argument('--resume_refinenet', type=str, default='',  help='resume PoseRefineNet model')
+    parser.add_argument('--resume_posenet', type=str, default='pose_model_current.pth', help='resume PoseNet model')
+    parser.add_argument('--resume_refinenet', type=str, default='pose_refine_model_current.pth', help='resume PoseRefineNet model')
     parser.add_argument('--start_epoch', type=int, default=1, help='which epoch to start')
     opt = parser.parse_args()
 

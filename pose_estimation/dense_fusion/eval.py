@@ -9,6 +9,8 @@ import random
 import numpy as np
 import yaml
 import copy
+import time
+import cv2
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -35,21 +37,21 @@ def main(opt):
     iteration = 4
     bs = 1
     dataset_config_dir = 'pose_estimation/dataset/linemod/dataset_config'
-    # output_result_dir = 'pose_estimation/dense_fusion/eval_result/linemod'
-    output_result_dir = 'pose_estimation/dense_fusion/logs/linemod'
+    output_result_dir = 'pose_estimation/dense_fusion/results/linemod'
     knn = KNearestNeighbor(1)
 
     estimator = PoseNet(num_points=num_points, num_obj=num_objects)
     estimator.cuda()
     refiner = PoseRefineNet(num_points=num_points, num_obj=num_objects)
     refiner.cuda()
-    estimator.load_state_dict(torch.load(opt.model))
-    refiner.load_state_dict(torch.load(opt.refine_model))
+    estimator.load_state_dict(torch.load(opt.posenet_model))
+    refiner.load_state_dict(torch.load(opt.refinenet_model))
     estimator.eval()
     refiner.eval()
 
     testdataset = PoseDataset('eval', num_points, False, opt.dataset_root, 0.0, True)
-    testdataloader = torch.utils.data.DataLoader(testdataset, batch_size=1, shuffle=False, num_workers=10)
+    # testdataloader = torch.utils.data.DataLoader(testdataset, batch_size=1, shuffle=False, num_workers=8)
+    testdataloader = torch.utils.data.DataLoader(testdataset, batch_size=1, shuffle=False, num_workers=1)
 
     sym_list = testdataset.get_sym_list()
     num_points_mesh = testdataset.get_num_points_mesh()
@@ -71,6 +73,8 @@ def main(opt):
     widgets = [FormatLabel(''), ' ', Percentage(), ' ', Bar('#'), ' ', RotatingMarker()]
     progress_bar = ProgressBar(widgets=widgets, maxval=testdataset.length).start()
 
+    times = []
+
     for i, data in enumerate(testdataloader, 0):
         points, choose, img, target, model_points, idx = data
 
@@ -86,6 +90,8 @@ def main(opt):
         target = Variable(target).cuda()
         model_points = Variable(model_points).cuda()
         idx = Variable(idx).cuda()
+
+        t1 = time.time()
 
         pred_r, pred_t, pred_c, emb = estimator(img, points, choose, idx)
         pred_r = pred_r / torch.norm(pred_r, dim=2).view(1, num_points, 1)
@@ -135,6 +141,9 @@ def main(opt):
             dis = torch.mean(torch.norm((pred.transpose(1, 0) - target.transpose(1, 0)), dim=1), dim=0).item()
         else:
             dis = np.mean(np.linalg.norm(pred - target, axis=1))
+        
+        t2 = time.time()
+        times.append((t2 - t1))
 
         if dis < diameter[idx[0].item()]:
             success_count[idx[0].item()] += 1
@@ -148,29 +157,42 @@ def main(opt):
         
         num_count[idx[0].item()] += 1
 
+        fw_pose = open(f'{output_result_dir}/pose/{i}.txt', 'w')
+        fw_pose.write(f'{my_r[0,0]} {my_r[1,0]} {my_r[2,0]} {my_r[0,1]} {my_r[1,1]} {my_r[2,1]} {my_r[0,2]} {my_r[1,2]} {my_r[2,2]} {my_t[0]} {my_t[1]} {my_t[2]}')
+        fw_pose.close()
+
+        fw_pred = open(f'{output_result_dir}/prediction/{i}.xyz', 'w')
+        for it in pred:
+           fw_pred.write(f'{it[0]} {it[1]} {it[2]}\n')
+        fw_pred.close()
+
         progress_bar.update(i+1)
 
     progress_bar.finish()
+
+    avg_time = sum(times) / len(times)
     
     for i in range(num_objects):
         print(f'Object {objlist[i]} success rate: {float(success_count[i]) / num_count[i]}')
         fw.write(f'Object {objlist[i]} success rate: {float(success_count[i]) / num_count[i]}\n')
 
     print(f'ALL success rate: {float(sum(success_count)) / sum(num_count)}')
+    print(f'Average prediction time: {avg_time}')
     fw.write(f'ALL success rate: {float(sum(success_count)) / sum(num_count)}\n')
+    fw.write(f'Average prediction time: {avg_time}\n')
 
     fw.close()
 
 
 if __name__ == '__main__':
-    print(f'\nStarting {sys.argv[0]} with arguments:\n {sys.argv[1:]}')
+    print(f'Starting {sys.argv[0]}')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root directory')
-    parser.add_argument('--model', type=str, default='', help='PoseNet model (full path)')
-    parser.add_argument('--refine_model', type=str, default='', help='PoseRefineNet model (full path)')
+    parser.add_argument('--posenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_model_9_0.01310166542980859.pth', help='PoseNet model (full path)')
+    parser.add_argument('--refinenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_refine_model_29_0.006821325639856025.pth', help='PoseRefineNet model (full path)')
     opt = parser.parse_args()
 
     main(opt)
 
-    print(f'\nFinished {sys.argv[0]}')
+    print(f'Finished {sys.argv[0]}')

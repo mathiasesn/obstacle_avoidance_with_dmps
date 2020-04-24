@@ -33,6 +33,8 @@ For further information see [requirements.txt](requirements.txt).
 - logs: Training log files
 - trained_models
     - trained_models/linemod: Checkpoints of linemod dataset
+- trained_checkpoints
+    - trained_checkpoints/linemod: Checkpoints of linemod from author found [here](https://drive.google.com/drive/folders/19ivHpaKm9dOrr12fzC8IDFczWRPFxho7)
 - eval.py: Evaluation script
 - train.py: Training script
 
