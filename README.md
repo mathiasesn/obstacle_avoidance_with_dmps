@@ -1,15 +1,4 @@
-# Admittance Control for Learning from Demonstration
-
-Kinesthetic teaching of complex tasks becomes easier for the operator with the use of an
-admittance controller that adapts to the dynamics of the user’s arm. The taught trajectory
-can be then encoded as a Dynamic Movement Primitive and adapt to a change in the
-location of the workpieces using pose estimation. This project will involve exploring
-admittance control.
-
-The project will contain the following subjects:
-- Force (admittance) control
-- Dynamic movement primitives
-- Pose estimation (optional)
+# Obstacle Avoidance with Dynamic Movements Primitives
 
 [Robotics toolbox for matlab](https://github.com/petercorke/robotics-toolbox-matlab.git).
 
@@ -31,3 +20,16 @@ The project will contain the following subjects:
 - <https://studywolf.wordpress.com/2016/05/13/dynamic-movement-primitives-part-4-avoiding-obstacles/>
 
 More information is given in lecture 10: Programming by Demonstration in Advanced Robotics 2.
+
+# Admittance Control for Learning from Demonstration
+
+Kinesthetic teaching of complex tasks becomes easier for the operator with the use of an
+admittance controller that adapts to the dynamics of the user’s arm. The taught trajectory
+can be then encoded as a Dynamic Movement Primitive and adapt to a change in the
+location of the workpieces using pose estimation. This project will involve exploring
+admittance control.
+
+The project will contain the following subjects:
+- Force (admittance) control
+- Dynamic movement primitives
+- Pose estimation (optional)
