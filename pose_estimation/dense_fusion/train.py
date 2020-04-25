@@ -260,7 +260,7 @@ def main(args):
 
 
 if __name__ == '__main__':
-    print(f'\nStarting {sys.argv[0]} with arguments:\n {sys.argv[1:]}')
+    print(f'Starting {sys.argv[0]}')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='linemod', help='the dataset used')

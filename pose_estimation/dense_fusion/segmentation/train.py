@@ -45,9 +45,8 @@ def main(args):
     if args.resume_model != '':
         checkpoint = torch.load(f'{args.model_save_pth}/{args.resume_model}')
         model.load_state_dict(checkpoint)
-    # else:
-    #     checkpoint = torch.load('pose_estimation/dense_fusion/segmentation/vgg16/vgg16-397923af.pth')
-    #     model.load_state_dict(checkpoint)
+    else:
+        model.init_vgg16_params(torch.load('pose_estimation/dense_fusion/segmentation/vgg16/vgg16-397923af.pth'))
     
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     criterion = Loss()
