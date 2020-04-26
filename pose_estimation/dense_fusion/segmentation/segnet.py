@@ -2,320 +2,168 @@
 """
 
 
-from __future__ import print_function
-import numpy as np
-import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.models as models
-import pprint
 from collections import OrderedDict
 
 
-vgg16_dis = [
-    (64, 64, 'M'),          # Stage - 1
-    (128, 128, 'M'),        # Stage - 2
-    (256, 256, 256,'M'),    # Stage - 3
-    (512, 512, 512, 'M'),   # Stage - 4
-    (512, 512, 512, 'M')    # Stage - 5
-]
-
-decoder_dims = [
-    ('U', 512, 512, 512),   # Stage - 5
-    ('U', 512, 512, 512),   # Stage - 4
-    ('U', 256, 256, 256),   # Stage - 3
-    ('U', 128, 128),        # Stage - 2
-    ('U', 64, 64)           # Stage - 1
-]
-
-
 class Segnet(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    """Segnet class
+    """
+    def __init__(self, input_nbr=3, label_nbr=2):
+        """Creates a Segnet object
+
+        Keyword Arguments:
+            input_nbr {int} -- input channels (rgb) (default: {3})
+            label_nbr {int} -- output channels (number of classes) (default: {2})
+        """
         super(Segnet, self).__init__()
 
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.num_channels = in_channels
+        batchNorm_momentum = 0.1
 
-        self.vgg16 = models.vgg16(pretrained=True)
+        self.conv11 = nn.Conv2d(input_nbr, 64, kernel_size=3, padding=1)
+        self.bn11 = nn.BatchNorm2d(64, momentum= batchNorm_momentum)
+        self.conv12 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn12 = nn.BatchNorm2d(64, momentum= batchNorm_momentum)
 
-        # encoder layers
-        self.encoder_conv_00 = nn.Sequential(*[
-            nn.Conv2d(in_channels=self.in_channels, out_channels=64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64)
-        ])
-        self.encoder_conv_01 = nn.Sequential(*[
-            nn.Conv2d(in_channels=64,out_channels=64,kernel_size=3,padding=1),
-            nn.BatchNorm2d(64)
-        ])
-        self.encoder_conv_10 = nn.Sequential(*[
-            nn.Conv2d(in_channels=64,out_channels=128,kernel_size=3,padding=1),
-            nn.BatchNorm2d(128)
-        ])
-        self.encoder_conv_11 = nn.Sequential(*[
-            nn.Conv2d(in_channels=128,out_channels=128,kernel_size=3, padding=1),
-            nn.BatchNorm2d(128)
-        ])
-        self.encoder_conv_20 = nn.Sequential(*[
-            nn.Conv2d(in_channels=128,out_channels=256,kernel_size=3,padding=1),
-            nn.BatchNorm2d(256)
-        ])
-        self.encoder_conv_21 = nn.Sequential(*[
-            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256)
-        ])
-        self.encoder_conv_22 = nn.Sequential(*[
-            nn.Conv2d(in_channels=256,out_channels=256,kernel_size=3,padding=1),
-            nn.BatchNorm2d(256)
-        ])
-        self.encoder_conv_30 = nn.Sequential(*[
-            nn.Conv2d(in_channels=256,out_channels=512,kernel_size=3,padding=1),
-            nn.BatchNorm2d(512)
-        ])
-        self.encoder_conv_31 = nn.Sequential(*[
-            nn.Conv2d(in_channels=512,out_channels=512,kernel_size=3,padding=1),
-            nn.BatchNorm2d(512)
-        ])
-        self.encoder_conv_32 = nn.Sequential(*[
-            nn.Conv2d(in_channels=512,out_channels=512,kernel_size=3,padding=1),
-            nn.BatchNorm2d(512)
-        ])
-        self.encoder_conv_40 = nn.Sequential(*[
-            nn.Conv2d(in_channels=512,out_channels=512,kernel_size=3,padding=1),
-            nn.BatchNorm2d(512)
-        ])
-        self.encoder_conv_41 = nn.Sequential(*[
-            nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1),
-            nn.BatchNorm2d(512)
-        ])
-        self.encoder_conv_42 = nn.Sequential(*[
-            nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1),
-            nn.BatchNorm2d(512)
-        ])
+        self.conv21 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.bn21 = nn.BatchNorm2d(128, momentum= batchNorm_momentum)
+        self.conv22 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+        self.bn22 = nn.BatchNorm2d(128, momentum= batchNorm_momentum)
 
-        self.init_vgg_weigts()
+        self.conv31 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+        self.bn31 = nn.BatchNorm2d(256, momentum= batchNorm_momentum)
+        self.conv32 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
+        self.bn32 = nn.BatchNorm2d(256, momentum= batchNorm_momentum)
+        self.conv33 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
+        self.bn33 = nn.BatchNorm2d(256, momentum= batchNorm_momentum)
 
-        # decoder layers
-        self.decoder_convtr_42 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=512,out_channels=512,kernel_size=3,padding=1),
-            nn.BatchNorm2d(512)
-        ])
-        self.decoder_convtr_41 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=512,out_channels=512,kernel_size=3,padding=1),
-            nn.BatchNorm2d(512)
-        ])
-        self.decoder_convtr_40 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=512,out_channels=512,kernel_size=3,padding=1),
-            nn.BatchNorm2d(512)
-        ])
-        self.decoder_convtr_32 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=512,out_channels=512,kernel_size=3,padding=1),
-            nn.BatchNorm2d(512)
-        ])
-        self.decoder_convtr_31 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=512,out_channels=512,kernel_size=3,padding=1),
-            nn.BatchNorm2d(512)
-        ])
-        self.decoder_convtr_30 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=512,out_channels=256,kernel_size=3,padding=1),
-            nn.BatchNorm2d(256)
-        ])
-        self.decoder_convtr_22 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=256,out_channels=256,kernel_size=3,padding=1),
-            nn.BatchNorm2d(256)
-        ])
-        self.decoder_convtr_21 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=256,out_channels=256,kernel_size=3,padding=1),
-            nn.BatchNorm2d(256)
-        ])
-        self.decoder_convtr_20 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=256,out_channels=128,kernel_size=3,padding=1),
-            nn.BatchNorm2d(128)
-        ])
-        self.decoder_convtr_11 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=128,out_channels=128,kernel_size=3,padding=1),
-            nn.BatchNorm2d(128)
-        ])
-        self.decoder_convtr_10 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=128, out_channels=64,kernel_size=3,padding=1),
-            nn.BatchNorm2d(64)
-        ])
-        self.decoder_convtr_01 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=64,out_channels=64,kernel_size=3,padding=1),
-            nn.BatchNorm2d(64)
-        ])
-        self.decoder_convtr_00 = nn.Sequential(*[
-            nn.ConvTranspose2d(in_channels=64,out_channels=self.out_channels,kernel_size=3,padding=1)
-        ])
+        self.conv41 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
+        self.bn41 = nn.BatchNorm2d(512, momentum= batchNorm_momentum)
+        self.conv42 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+        self.bn42 = nn.BatchNorm2d(512, momentum= batchNorm_momentum)
+        self.conv43 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+        self.bn43 = nn.BatchNorm2d(512, momentum= batchNorm_momentum)
+
+        self.conv51 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+        self.bn51 = nn.BatchNorm2d(512, momentum= batchNorm_momentum)
+        self.conv52 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+        self.bn52 = nn.BatchNorm2d(512, momentum= batchNorm_momentum)
+        self.conv53 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+        self.bn53 = nn.BatchNorm2d(512, momentum= batchNorm_momentum)
+
+        self.conv53d = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+        self.bn53d = nn.BatchNorm2d(512, momentum= batchNorm_momentum)
+        self.conv52d = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+        self.bn52d = nn.BatchNorm2d(512, momentum= batchNorm_momentum)
+        self.conv51d = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+        self.bn51d = nn.BatchNorm2d(512, momentum= batchNorm_momentum)
+
+        self.conv43d = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+        self.bn43d = nn.BatchNorm2d(512, momentum= batchNorm_momentum)
+        self.conv42d = nn.Conv2d(512, 512, kernel_size=3, padding=1)
+        self.bn42d = nn.BatchNorm2d(512, momentum= batchNorm_momentum)
+        self.conv41d = nn.Conv2d(512, 256, kernel_size=3, padding=1)
+        self.bn41d = nn.BatchNorm2d(256, momentum= batchNorm_momentum)
+
+        self.conv33d = nn.Conv2d(256, 256, kernel_size=3, padding=1)
+        self.bn33d = nn.BatchNorm2d(256, momentum= batchNorm_momentum)
+        self.conv32d = nn.Conv2d(256, 256, kernel_size=3, padding=1)
+        self.bn32d = nn.BatchNorm2d(256, momentum= batchNorm_momentum)
+        self.conv31d = nn.Conv2d(256,  128, kernel_size=3, padding=1)
+        self.bn31d = nn.BatchNorm2d(128, momentum= batchNorm_momentum)
+
+        self.conv22d = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+        self.bn22d = nn.BatchNorm2d(128, momentum= batchNorm_momentum)
+        self.conv21d = nn.Conv2d(128, 64, kernel_size=3, padding=1)
+        self.bn21d = nn.BatchNorm2d(64, momentum= batchNorm_momentum)
+
+        self.conv12d = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn12d = nn.BatchNorm2d(64, momentum= batchNorm_momentum)
+        self.conv11d = nn.Conv2d(64, label_nbr, kernel_size=3, padding=1)
+
 
     def forward(self, x):
-        # Encoder
-        # Encoder Stage - 1
-        dim_0 = x.size()
-        x_00 = F.relu(self.encoder_conv_00(x))
-        x_01 = F.relu(self.encoder_conv_01(x_00))
-        x_0, indices_0 = F.max_pool2d(x_01, kernel_size=2, stride=2, return_indices=True)
+        """Forward of Segnet
 
-        # Encoder Stage - 2
-        dim_1 = x_0.size()
-        x_10 = F.relu(self.encoder_conv_10(x_0))
-        x_11 = F.relu(self.encoder_conv_11(x_10))
-        x_1, indices_1 = F.max_pool2d(x_11, kernel_size=2, stride=2, return_indices=True)
+        Arguments:
+            x {Tensor} -- rgb image
 
-        # Encoder Stage - 3
-        dim_2 = x_1.size()
-        x_20 = F.relu(self.encoder_conv_20(x_1))
-        x_21 = F.relu(self.encoder_conv_21(x_20))
-        x_22 = F.relu(self.encoder_conv_22(x_21))
-        x_2, indices_2 = F.max_pool2d(x_22, kernel_size=2, stride=2, return_indices=True)
+        Returns:
+            Tensor -- prediction
+        """
+        x11 = F.relu(self.bn11(self.conv11(x)))
+        x12 = F.relu(self.bn12(self.conv12(x11)))
+        x1p, id1 = F.max_pool2d(x12,kernel_size=2, stride=2,return_indices=True)
 
-        # Encoder Stage - 4
-        dim_3 = x_2.size()
-        x_30 = F.relu(self.encoder_conv_30(x_2))
-        x_31 = F.relu(self.encoder_conv_31(x_30))
-        x_32 = F.relu(self.encoder_conv_32(x_31))
-        x_3, indices_3 = F.max_pool2d(x_32, kernel_size=2, stride=2, return_indices=True)
+        x21 = F.relu(self.bn21(self.conv21(x1p)))
+        x22 = F.relu(self.bn22(self.conv22(x21)))
+        x2p, id2 = F.max_pool2d(x22,kernel_size=2, stride=2,return_indices=True)
 
-        # Encoder Stage - 5
-        dim_4 = x_3.size()
-        x_40 = F.relu(self.encoder_conv_40(x_3))
-        x_41 = F.relu(self.encoder_conv_41(x_40))
-        x_42 = F.relu(self.encoder_conv_42(x_41))
-        x_4, indices_4 = F.max_pool2d(x_42, kernel_size=2, stride=2, return_indices=True)
+        x31 = F.relu(self.bn31(self.conv31(x2p)))
+        x32 = F.relu(self.bn32(self.conv32(x31)))
+        x33 = F.relu(self.bn33(self.conv33(x32)))
+        x3p, id3 = F.max_pool2d(x33,kernel_size=2, stride=2,return_indices=True)
 
-        # Decoder
-        dim_d = x_4.size()
+        x41 = F.relu(self.bn41(self.conv41(x3p)))
+        x42 = F.relu(self.bn42(self.conv42(x41)))
+        x43 = F.relu(self.bn43(self.conv43(x42)))
+        x4p, id4 = F.max_pool2d(x43,kernel_size=2, stride=2,return_indices=True)
 
-        # Decoder Stage - 5
-        x_4d = F.max_unpool2d(x_4, indices_4, kernel_size=2, stride=2, output_size=dim_4)
-        x_42d = F.relu(self.decoder_convtr_42(x_4d))
-        x_41d = F.relu(self.decoder_convtr_41(x_42d))
-        x_40d = F.relu(self.decoder_convtr_40(x_41d))
-        dim_4d = x_40d.size()
+        x51 = F.relu(self.bn51(self.conv51(x4p)))
+        x52 = F.relu(self.bn52(self.conv52(x51)))
+        x53 = F.relu(self.bn53(self.conv53(x52)))
+        x5p, id5 = F.max_pool2d(x53,kernel_size=2, stride=2,return_indices=True)
 
-        # Decoder Stage - 4
-        x_3d = F.max_unpool2d(x_40d, indices_3, kernel_size=2, stride=2, output_size=dim_3)
-        x_32d = F.relu(self.decoder_convtr_32(x_3d))
-        x_31d = F.relu(self.decoder_convtr_31(x_32d))
-        x_30d = F.relu(self.decoder_convtr_30(x_31d))
-        dim_3d = x_30d.size()
+        x5d = F.max_unpool2d(x5p, id5, kernel_size=2, stride=2)
+        x53d = F.relu(self.bn53d(self.conv53d(x5d)))
+        x52d = F.relu(self.bn52d(self.conv52d(x53d)))
+        x51d = F.relu(self.bn51d(self.conv51d(x52d)))
 
-        # Decoder Stage - 3
-        x_2d = F.max_unpool2d(x_30d, indices_2, kernel_size=2, stride=2, output_size=dim_2)
-        x_22d = F.relu(self.decoder_convtr_22(x_2d))
-        x_21d = F.relu(self.decoder_convtr_21(x_22d))
-        x_20d = F.relu(self.decoder_convtr_20(x_21d))
-        dim_2d = x_20d.size()
+        x4d = F.max_unpool2d(x51d, id4, kernel_size=2, stride=2)
+        x43d = F.relu(self.bn43d(self.conv43d(x4d)))
+        x42d = F.relu(self.bn42d(self.conv42d(x43d)))
+        x41d = F.relu(self.bn41d(self.conv41d(x42d)))
 
-        # Decoder Stage - 2
-        x_1d = F.max_unpool2d(x_20d, indices_1, kernel_size=2, stride=2, output_size=dim_1)
-        x_11d = F.relu(self.decoder_convtr_11(x_1d))
-        x_10d = F.relu(self.decoder_convtr_10(x_11d))
-        dim_1d = x_10d.size()
+        x3d = F.max_unpool2d(x41d, id3, kernel_size=2, stride=2)
+        x33d = F.relu(self.bn33d(self.conv33d(x3d)))
+        x32d = F.relu(self.bn32d(self.conv32d(x33d)))
+        x31d = F.relu(self.bn31d(self.conv31d(x32d)))
 
-        # Decoder Stage - 1
-        x_0d = F.max_unpool2d(x_10d, indices_0, kernel_size=2, stride=2, output_size=dim_0)
-        x_01d = F.relu(self.decoder_convtr_01(x_0d))
-        x_00d = self.decoder_convtr_00(x_01d)
-        dim_0d = x_00d.size()
+        x2d = F.max_unpool2d(x31d, id2, kernel_size=2, stride=2)
+        x22d = F.relu(self.bn22d(self.conv22d(x2d)))
+        x21d = F.relu(self.bn21d(self.conv21d(x22d)))
 
-        x_softmax = F.softmax(x_00d, dim=1)
+        x1d = F.max_unpool2d(x21d, id1, kernel_size=2, stride=2)
+        x12d = F.relu(self.bn12d(self.conv12d(x1d)))
+        x11d = self.conv11d(x12d)
 
-
-        # print("dim_0: {}".format(dim_0))
-        # print("dim_1: {}".format(dim_1))
-        # print("dim_2: {}".format(dim_2))
-        # print("dim_3: {}".format(dim_3))
-        # print("dim_4: {}".format(dim_4))
-
-        # print("dim_d: {}".format(dim_d))
-        # print("dim_4d: {}".format(dim_4d))
-        # print("dim_3d: {}".format(dim_3d))
-        # print("dim_2d: {}".format(dim_2d))
-        # print("dim_1d: {}".format(dim_1d))
-        # print("dim_0d: {}".format(dim_0d))
-
-
-        return x_00d, x_softmax
-
-    def init_vgg_weigts(self):
-            assert self.encoder_conv_00[0].weight.size() == self.vgg16.features[0].weight.size()
-            self.encoder_conv_00[0].weight.data = self.vgg16.features[0].weight.data
-            assert self.encoder_conv_00[0].bias.size() == self.vgg16.features[0].bias.size()
-            self.encoder_conv_00[0].bias.data = self.vgg16.features[0].bias.data
-
-            assert self.encoder_conv_01[0].weight.size() == self.vgg16.features[2].weight.size()
-            self.encoder_conv_01[0].weight.data = self.vgg16.features[2].weight.data
-            assert self.encoder_conv_01[0].bias.size() == self.vgg16.features[2].bias.size()
-            self.encoder_conv_01[0].bias.data = self.vgg16.features[2].bias.data
-
-            assert self.encoder_conv_10[0].weight.size() == self.vgg16.features[5].weight.size()
-            self.encoder_conv_10[0].weight.data = self.vgg16.features[5].weight.data
-            assert self.encoder_conv_10[0].bias.size() == self.vgg16.features[5].bias.size()
-            self.encoder_conv_10[0].bias.data = self.vgg16.features[5].bias.data
-
-            assert self.encoder_conv_11[0].weight.size() == self.vgg16.features[7].weight.size()
-            self.encoder_conv_11[0].weight.data = self.vgg16.features[7].weight.data
-            assert self.encoder_conv_11[0].bias.size() == self.vgg16.features[7].bias.size()
-            self.encoder_conv_11[0].bias.data = self.vgg16.features[7].bias.data
-
-            assert self.encoder_conv_20[0].weight.size() == self.vgg16.features[10].weight.size()
-            self.encoder_conv_20[0].weight.data = self.vgg16.features[10].weight.data
-            assert self.encoder_conv_20[0].bias.size() == self.vgg16.features[10].bias.size()
-            self.encoder_conv_20[0].bias.data = self.vgg16.features[10].bias.data
-
-            assert self.encoder_conv_21[0].weight.size() == self.vgg16.features[12].weight.size()
-            self.encoder_conv_21[0].weight.data = self.vgg16.features[12].weight.data
-            assert self.encoder_conv_21[0].bias.size() == self.vgg16.features[12].bias.size()
-            self.encoder_conv_21[0].bias.data = self.vgg16.features[12].bias.data
-
-            assert self.encoder_conv_22[0].weight.size() == self.vgg16.features[14].weight.size()
-            self.encoder_conv_22[0].weight.data = self.vgg16.features[14].weight.data
-            assert self.encoder_conv_22[0].bias.size() == self.vgg16.features[14].bias.size()
-            self.encoder_conv_22[0].bias.data = self.vgg16.features[14].bias.data
-
-            assert self.encoder_conv_30[0].weight.size() == self.vgg16.features[17].weight.size()
-            self.encoder_conv_30[0].weight.data = self.vgg16.features[17].weight.data
-            assert self.encoder_conv_30[0].bias.size() == self.vgg16.features[17].bias.size()
-            self.encoder_conv_30[0].bias.data = self.vgg16.features[17].bias.data
-
-            assert self.encoder_conv_31[0].weight.size() == self.vgg16.features[19].weight.size()
-            self.encoder_conv_31[0].weight.data = self.vgg16.features[19].weight.data
-            assert self.encoder_conv_31[0].bias.size() == self.vgg16.features[19].bias.size()
-            self.encoder_conv_31[0].bias.data = self.vgg16.features[19].bias.data
-
-            assert self.encoder_conv_32[0].weight.size() == self.vgg16.features[21].weight.size()
-            self.encoder_conv_32[0].weight.data = self.vgg16.features[21].weight.data
-            assert self.encoder_conv_32[0].bias.size() == self.vgg16.features[21].bias.size()
-            self.encoder_conv_32[0].bias.data = self.vgg16.features[21].bias.data
-
-            assert self.encoder_conv_40[0].weight.size() == self.vgg16.features[24].weight.size()
-            self.encoder_conv_40[0].weight.data = self.vgg16.features[24].weight.data
-            assert self.encoder_conv_40[0].bias.size() == self.vgg16.features[24].bias.size()
-            self.encoder_conv_40[0].bias.data = self.vgg16.features[24].bias.data
-
-            assert self.encoder_conv_41[0].weight.size() == self.vgg16.features[26].weight.size()
-            self.encoder_conv_41[0].weight.data = self.vgg16.features[26].weight.data
-            assert self.encoder_conv_41[0].bias.size() == self.vgg16.features[26].bias.size()
-            self.encoder_conv_41[0].bias.data = self.vgg16.features[26].bias.data
-
-            assert self.encoder_conv_42[0].weight.size() == self.vgg16.features[28].weight.size()
-            self.encoder_conv_42[0].weight.data = self.vgg16.features[28].weight.data
-            assert self.encoder_conv_42[0].bias.size() == self.vgg16.features[28].bias.size()
-            self.encoder_conv_42[0].bias.data = self.vgg16.features[28].bias.data
+        return x11d
 
 
 if __name__ == '__main__':
-    model = Segnet(in_channels=3, out_channels=3)
+    import cv2
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    model = Segnet(input_nbr=3, label_nbr=3)
     print(model)
-    img = torch.randn([4, 3, 224, 224])
-    plt.imshow(np.transpose(img.numpy()[0, :, :, :], (1, 2, 0)))
-    plt.show()
-    output, softmax_output = model(img)
-    plt.imshow(np.transpose(output.detach().numpy()[0, :, :, :], (1, 2, 0)))
-    plt.show()
-    print(f'Output size --> {output.size()}')
-    print(f'Softmax output size --> {softmax_output.size()}')
-    print(f'Output --> {output[0, :, 0, 0]}')
-    print(f'Softmax output --> {softmax_output[0, :, 0, 0].sum()}')
+
+    while True:
+        src = torch.rand([4, 3, 224, 224])
+        img = np.transpose(src.numpy()[0, :, :, :], (1, 2, 0))
+        cv2.imshow('Image', cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+
+        output = model(src)
+        result = np.transpose(output.detach().numpy()[0, :, :, :], (1, 2, 0))
+        cv2.imshow('Output', cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
+
+        print(f'Output size --> {output.size()}')
+        # print(f'Softmax output size --> {softmax_output.size()}')
+        print(f'Output --> {output[0, :, 0, 0]}')
+        # print(f'Softmax output --> {softmax_output[0, :, 0, 0].sum()}')
+
+        key = cv2.waitKey(0)
+        if key == 27:
+            break

@@ -37,18 +37,18 @@ def loss_calculation(semantic, target):
     return semantic_loss
 
 
-def cross_entropy2d(input, target, weight=None, size_average=True):
-    n, c, h, w = input.size()
-    nt, ct, ht, wt = target.size()
+def cross_entropy2d(x, target, weight=None, size_average=True):
+    n, c, h, w = x.size()
+    nt, ht, wt = target.size()
 
     # Handle inconsistent size between input and target
     if h != ht and w != wt:  # upsample labels
-        input = F.interpolate(input, size=(ht, wt), mode="bilinear", align_corners=True)
+        x = F.interpolate(x, size=(ht, wt), mode="bilinear", align_corners=True)
 
-    input = input.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+    x = x.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
     target = target.view(-1)
     loss = F.cross_entropy(
-        input, target, weight=weight, size_average=size_average, ignore_index=250
+        x, target, weight=weight, size_average=size_average, ignore_index=250
     )
     return loss
 
@@ -64,7 +64,7 @@ class Loss(_Loss):
         """
         super(Loss, self).__init__(True)
     
-    def forward(self, input, target):
+    def forward(self, x, target):
         """Calculates the Loss
 
         Arguments:
@@ -74,4 +74,4 @@ class Loss(_Loss):
         Returns:
             float -- loss
         """
-        return cross_entropy2d(input, target)
+        return cross_entropy2d(x, target)
