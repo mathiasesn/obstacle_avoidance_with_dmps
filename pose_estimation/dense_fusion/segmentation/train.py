@@ -35,13 +35,14 @@ def main(args):
         model.load_state_dict(torch.load(args.resume_model))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
     best_val_cost = np.Inf
     criterion = Loss()
+    st_time = time.time()
 
     for epoch in range(args.n_epochs):
         print(f'Starting epoch {epoch}')
 
-        st_time = time.time()
         f = open(f'{args.log_dir}/epoch_{epoch}_log.txt', 'w')
         time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
         f.write(f'Train time: {time_str}, Training started\n')
@@ -53,11 +54,11 @@ def main(args):
         train_time = 0
 
         widgets = [FormatLabel(''), ' ', Percentage(), ' ', Bar('#'), ' ', RotatingMarker()]
-        progress_bar = ProgressBar(widgets=widgets, maxval=len(dataset)*20).start()
+        progress_bar = ProgressBar(widgets=widgets, maxval=len(dataset)*10).start()
 
-        for rep in range(20):
-
-            for i, data in enumerate(dataloader, 0):
+        i = 0
+        for rep in range(10):
+            for data in dataloader:
                 img, mask = data
                 img = Variable(img).cuda()
                 mask = Variable(mask).cuda()
@@ -78,6 +79,8 @@ def main(args):
 
                 widgets[0] = FormatLabel(f'Epoch {epoch} Batch {train_time} Avg CEloss {(train_loss_f/train_time):.8f}')
                 progress_bar.update(i+1)
+                
+                i += 1
         
         progress_bar.finish()
         
