@@ -133,7 +133,7 @@ def main(args):
         if test_loss_f <= best_val_cost:
             best_val_cost = test_loss_f
             torch.save(model.state_dict(), f'{args.save_dir}/model_{epoch}_{test_loss_f}.pth')
-            print(f'new model save at epoch {epoch} with average CEloss {test_loss_f:.6f}')
+            print(f'New model save at epoch {epoch} with average CEloss {test_loss_f:.8f}')
 
 
 if __name__ == '__main__':
@@ -145,7 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('--workers', type=int, default=8, help='nunber of data loading workers (default: 8)') # change to 8
     parser.add_argument('--lr', type=float, default=0.0001, help='learning rate (default: 0.0001)')
     parser.add_argument('--log_dir', type=str, default='pose_estimation/dense_fusion/segmentation/logs/ape', help='path to save logs')
-    parser.add_argument('--resume_model', type=str, default='', help='resume model path')
+    parser.add_argument('--resume_model', type=str, default='pose_estimation/dense_fusion/segmentation/trained_models/ape/model_current.pth', help='resume model path')
     args = parser.parse_args()
 
     main(args)
