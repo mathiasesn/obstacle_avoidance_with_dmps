@@ -16,7 +16,7 @@ class MatlabEngine:
         self.engine.workspace["robot"] = self.engine.loadrobot("frankaEmikaPanda", "DataFormat", "column")
 
     def simulate_robot(self):
-        for i in range(self.q.shape[1]):
+        for i in range(0,self.q.shape[1],100):
             self.engine.workspace["qi"] = matlab.double(self.q[:, i].tolist())
             self.engine.eval("show(robot, qi')")
 
@@ -78,8 +78,8 @@ Matlab_Engine = MatlabEngine()
 
 Matlab_Engine.load_robot()
 Matlab_Engine.generate_path()
-Matlab_Engine.save_trajectory()
+#Matlab_Engine.save_trajectory()
 
 #Matlab_Engine.plot_path()
-#Matlab_Engine.simulate_robot()
+Matlab_Engine.simulate_robot()
 #Matlab_Engine.exit()

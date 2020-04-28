@@ -78,44 +78,7 @@ if __name__ == '__main__':
     # ax.legend()
     # plt.show()
 
-
-    # Testing animation
-
-    def init():
-        # ax.set_xlim(0, 1.2)
-        # ax.set_ylim(0, 1.2)
-        # ax.set_zlim(0, 1.2)
-        return plot3d,
-
-    def data(i, sphere, trajectory):
-        sphere.move_sphere(trajectory) # moving the sphere based on pre-calculated trajectory
-
-        # Recalculating DMP based on new space of sphere
-        N = 30  
-        dmp = PositionDMP(n_bfs=N, alpha=48.0, obstacles=sphere)
-        dmp.train(demo_p, t, tau)
-        # Generate an output trajectory from the trained DMP
-        dmp_p, dmp_dp, dmp_ddp = dmp.rollout(t, tau)
-
-
-        ax.clear()
-        # ax.set_xlim(0, 1.2)
-        # ax.set_ylim(0, 1.2)
-        # ax.set_zlim(0, 1.2)
-        ax.plot3D(demo_p[:, 0], demo_p[:, 1], demo_p[:, 2], label='Demonstration')
-        ax.plot3D(dmp_p[:, 0], dmp_p[:, 1], dmp_p[:, 2], label='DMP')
-        plot3d = ax.plot_surface(sphere.x, sphere.y, sphere.z, rstride=1, cstride=1)
-
-   
-        return plot3d,
-
-    # Defining obstacle
-    frames = 100
-    sphere = Obstacle([0.575, 0.30, 0.45])
-    trajectory = np.squeeze(sphere.create_trajectory([0.65,0.20,0.45], frames))
-
-    # DMP Defining
-    # Load a demonstration file containing robot positions.
+    #### TESTING ONLINE PLOTTING
     demo = np.loadtxt("demo.dat", delimiter=" ", skiprows=1)
     
     tau = 0.002 * len(demo)
@@ -123,23 +86,9 @@ if __name__ == '__main__':
     demo_p = demo[:, 0:3]
 
     # Recalculating DMP based on new space of sphere
+    sphere = Obstacle([0.575, 0.30, 0.45])
     N = 30  
     dmp = PositionDMP(n_bfs=N, alpha=48.0, obstacles=sphere)
     dmp.train(demo_p, t, tau)
-    # Generate an output trajectory from the trained DMP
-    dmp_p, dmp_dp, dmp_ddp = dmp.rollout(t, tau)
-
-
-    # Making animation
-    fig = plt.figure()
-    ax = ax = plt.axes(projection='3d')
-
-    plot3d = ax.plot_surface(sphere.x, sphere.y, sphere.z, rstride=1, cstride=1) # init sphere at start pos
-    ax.plot3D(demo_p[:, 0], demo_p[:, 1], demo_p[:, 2], label='Demonstration')
-    ax.plot3D(dmp_p[:, 0], dmp_p[:, 1], dmp_p[:, 2], label='DMP')
-
-    ani = animation.FuncAnimation(fig, data, fargs=(sphere, trajectory), init_func=init, frames=frames-1, interval=30, blit=False, repeat=False)
-
-    #plt.show()
-    ani.save('sine_wave.gif', writer='imagemagick')
+    dmp.move_and_plot_dmp_obs(demo_p, t, tau)
 
