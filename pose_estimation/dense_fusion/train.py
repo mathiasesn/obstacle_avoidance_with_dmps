@@ -19,7 +19,7 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
-from progressbar import *
+from tqdm import tqdm
 from pose_estimation.dataset.linemod.dataset import PoseDataset as PoseDataset_linemod
 from pose_estimation.dense_fusion.lib.network import PoseNet, PoseRefineNet
 from pose_estimation.dense_fusion.lib.loss import Loss
@@ -83,20 +83,18 @@ def main(args):
     criterion = Loss(opt.num_points_mesh, opt.sym_list)
     criterion_refine = Loss_refine(opt.num_points_mesh, opt.sym_list)
 
-    best_test = np.Inf
-
     if opt.start_epoch == 1:
         for log in os.listdir(opt.log_dir):
             os.remove(os.path.join(opt.log_dir, log))
 
+    best_test = np.Inf
     st_time = time.time()
 
     for epoch in range(opt.start_epoch, opt.nepoch):
         time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
-        # logger = setup_logger(f'epoch{epoch}', os.path.join(opt.log_dir, f'epoch_{epoch}_log.txt'))
-        # logger.info(f'Train time {time_str}, Training started')
         fw = open(f'{opt.log_dir}/epoch_{epoch}_log.txt', 'w')
         fw.write(f'Train time {time_str}, Training started\n')
+        print(f'Train time {time_str}, Training started')
 
         train_count = 0
         train_dis_avg = 0.0
@@ -108,11 +106,8 @@ def main(args):
             estimator.train()
         optimizer.zero_grad()
 
-        for rep in range(opt.repeat_epoch):
-
-            widgets = [FormatLabel(''), ' ', Percentage(), ' ', Bar('#'), ' ', RotatingMarker()]
-            progress_bar = ProgressBar(widgets=widgets, maxval=len(dataset)).start()
-
+        bar = tqdm(range(opt.repeat_epoch), ascii=True)
+        for rep in bar:
             for i, data in enumerate(dataloader, 0):
                 points, choose, img, target, model_points, idx = data
 
@@ -139,10 +134,9 @@ def main(args):
 
                 if train_count % opt.batch_size == 0:
                     time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
-                    # logger.info(f'Train time {time_str} Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{train_dis_avg/opt.batch_size}')
                     fw.write(f'Train time {time_str} Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{train_dis_avg/opt.batch_size}\n')
 
-                    widgets[0] = FormatLabel(f'Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{(train_dis_avg/opt.batch_size):.6f}')
+                    bar.set_description(f'Epoch {epoch} Batch {int(train_count/opt.batch_size)} Frame {train_count} Avg_dis:{(train_dis_avg/opt.batch_size):.6f}')
                     
                     optimizer.step()
                     optimizer.zero_grad()
@@ -154,20 +148,18 @@ def main(args):
                     else:
                         torch.save(estimator.state_dict(), f'{opt.outf}/pose_model_current.pth')
                 
-                progress_bar.update(i+1)
-            
-            progress_bar.finish()
-            print(f'Repetition {rep+1} of {opt.repeat_epoch} done!')
+                bar.update(1/len(dataset))
+
+            # print(f'Repetition {rep+1} of {opt.repeat_epoch} done!')
 
         fw.close()
         
         print(f'Epoch {epoch} train finished')
 
         time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
-        # logger = setup_logger(f'epoch{epoch}_test', os.path.join(opt.log_dir, f'epoch_{epoch}_test_log.txt'))
-        # logger.info(f'Train time {time_str}, Training started')
         fw = open(f'{opt.log_dir}/epoch_{epoch}_test_log.txt', 'w')
         fw.write(f'Train time {time_str}, Training started\n')
+        print(f'Train time {time_str}, Training started')
         
         test_dis = 0.0
         test_count = 0
@@ -175,10 +167,8 @@ def main(args):
         estimator.eval()
         refiner.eval()
 
-        widgets = [FormatLabel(''), ' ', Percentage(), ' ', Bar('#'), ' ', RotatingMarker()]
-        progress_bar = ProgressBar(widgets=widgets, maxval=len(test_dataset)).start()
-
-        for j, data in enumerate(testdataloader, 0):
+        bar = tqdm(testdataloader, ascii=True)
+        for j, data in enumerate(bar, 0):
             points, choose, img, target, model_points, idx = data
 
             points = Variable(points).cuda()
@@ -199,20 +189,15 @@ def main(args):
             test_dis += dis.item()
 
             time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
-            # logger.info(f'Test time {time_str} Test Frame No.{test_count} dis:{dis}')
             fw.write(f'Test time {time_str} Test Frame No.{test_count} dis:{dis[0]}\n')
-            widgets[0] = FormatLabel(f'Test Frame No.{test_count} dis:{dis[0]:.6f}')
+            bar.set_description(f'Test Frame No.{test_count} dis:{dis[0]:.6f}')
 
             test_count += 1
-
-            progress_bar.update(j+1)
-        
-        progress_bar.finish()
+            bar.update(1)
         
         test_dis = test_dis / test_count
 
         time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
-        # logger.info(f'Test time {time_str} Epoch {epoch} TEST FINISH Avg dis: {test_dis}')
         print(f'Test time {time_str} Epoch {epoch} TEST FINISH Avg dis: {test_dis}')
         fw.write(f'Test time {time_str} Epoch {epoch} TEST FINISH Avg dis: {test_dis}\n')
         fw.close()

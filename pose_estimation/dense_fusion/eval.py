@@ -21,7 +21,7 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
-from progressbar import *
+from tqdm import tqdm
 from pose_estimation.dataset.linemod.dataset import PoseDataset
 from pose_estimation.dense_fusion.lib.network import PoseNet, PoseRefineNet
 from pose_estimation.dense_fusion.lib.loss import Loss
@@ -70,17 +70,15 @@ def main(opt):
 
     fw = open(f'{output_result_dir}/eval_result_logs.txt', 'w')
 
-    widgets = [FormatLabel(''), ' ', Percentage(), ' ', Bar('#'), ' ', RotatingMarker()]
-    progress_bar = ProgressBar(widgets=widgets, maxval=testdataset.length).start()
-
     times = []
 
-    for i, data in enumerate(testdataloader, 0):
+    bar = tqdm(testdataloader)
+    for i, data in enumerate(bar, 0):
         points, choose, img, target, model_points, idx = data
 
         if len(points.size()) == 2:
             # print(f'No.{i} NOT Pass! Lost detection!')
-            widgets[0] = FormatLabel(f'No.{i} NOT Pass! Lost detection!')
+            bar.set_description(f'No.{i} NOT Pass! Lost detection!')
             fw.write(f'No.{i} NOT Pass! Lost detection!\n')
             continue
         
@@ -147,12 +145,10 @@ def main(opt):
 
         if dis < diameter[idx[0].item()]:
             success_count[idx[0].item()] += 1
-            # print(f'No.{i} of {testdataset.length} Pass! Distance: {dis}')
-            widgets[0] = FormatLabel(f'No.{i} Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
+            bar.set_description(f'No.{i} Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
             fw.write(f'No.{i} Pass! Distance: {dis}\n')
         else:
-            # print(f'No.{i} of {testdataset.length} NOT Pass! Distance: {dis}')
-            widgets[0] = FormatLabel(f'No.{i} NOT Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
+            bar.set_description(f'No.{i} NOT Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
             fw.write(f'No.{i} NOT Pass! Distance: {dis}\n')
         
         num_count[idx[0].item()] += 1
@@ -165,10 +161,6 @@ def main(opt):
         for it in pred:
            fw_pred.write(f'{it[0]} {it[1]} {it[2]}\n')
         fw_pred.close()
-
-        progress_bar.update(i+1)
-
-    progress_bar.finish()
 
     avg_time = sum(times) / len(times)
     
@@ -185,14 +177,10 @@ def main(opt):
 
 
 if __name__ == '__main__':
-    print(f'Starting {sys.argv[0]}')
-
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Eval a DenseFusion model')
     parser.add_argument('--dataset_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root directory')
     parser.add_argument('--posenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_model_9_0.01310166542980859.pth', help='PoseNet model (full path)')
     parser.add_argument('--refinenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_refine_model_29_0.006821325639856025.pth', help='PoseRefineNet model (full path)')
     opt = parser.parse_args()
 
     main(opt)
-
-    print(f'Finished {sys.argv[0]}')
