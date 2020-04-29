@@ -21,7 +21,7 @@ from pose_estimation.dense_fusion.segmentation.loss import Loss
 def main(args):
     data_root = args.data_root
 
-    dataset = SegDataset(root_dir=data_root, item=args.item, mode='train')
+    dataset = SegDataset(root_dir=data_root, item=args.item, mode='train', use_noise=True)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
     print(f'Training set loaded! Length of training set --> {len(dataset)}')
 
@@ -57,7 +57,7 @@ def main(args):
         train_loss_f = 0.0
         train_time = 0
 
-        bar = tqdm(range(10), ascii=True)
+        bar = tqdm(range(20), ascii=True)
         for rep in bar:
             for data in dataloader:
                 img, mask = data
@@ -79,7 +79,6 @@ def main(args):
                 train_time += 1
 
                 bar.set_description(f'Epoch {epoch} Batch {train_time} Avg CEloss {(train_loss_f/train_time):.8f}')
-                bar.update(1)
         
         train_loss_f = train_loss_f / train_time
         

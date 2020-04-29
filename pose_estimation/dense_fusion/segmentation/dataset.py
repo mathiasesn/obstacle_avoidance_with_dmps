@@ -121,7 +121,7 @@ class SegDataset(Dataset):
             img = np.array(img)
         else:
             img = np.array(self.trancolor(img))
-        img = cv2.resize(img, (224,224), interpolation=cv2.INTER_AREA) 
+        img = cv2.resize(img, (224,224), interpolation=cv2.INTER_AREA)
         # img = np.transpose(img, (2, 0, 1))
         img = np.array(img, dtype=np.float32) / 255.0
         return img

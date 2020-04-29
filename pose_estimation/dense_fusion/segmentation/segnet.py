@@ -146,10 +146,12 @@ if __name__ == '__main__':
     import cv2
     import numpy as np
     import matplotlib.pyplot as plt
+    from torchviz import make_dot
 
     model = Segnet(input_nbr=3, label_nbr=3)
     print(model)
 
+    print('Press ESC to quit')
     while True:
         src = torch.rand([4, 3, 224, 224])
         img = np.transpose(src.numpy()[0, :, :, :], (1, 2, 0))

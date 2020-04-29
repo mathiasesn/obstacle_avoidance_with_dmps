@@ -79,7 +79,7 @@ def main(opt):
         if len(points.size()) == 2:
             # print(f'No.{i} NOT Pass! Lost detection!')
             bar.set_description(f'No.{i} NOT Pass! Lost detection!')
-            fw.write(f'No.{i} NOT Pass! Lost detection!\n')
+            fw.write(f'No. {i} NOT Pass! Lost detection!\n')
             continue
         
         points = Variable(points).cuda()
@@ -146,10 +146,10 @@ def main(opt):
         if dis < diameter[idx[0].item()]:
             success_count[idx[0].item()] += 1
             bar.set_description(f'No.{i} Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
-            fw.write(f'No.{i} Pass! Distance: {dis}\n')
+            fw.write(f'No. {i} Pass! Distance: {dis}\n')
         else:
             bar.set_description(f'No.{i} NOT Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
-            fw.write(f'No.{i} NOT Pass! Distance: {dis}\n')
+            fw.write(f'No. {i} NOT Pass! Distance: {dis}\n')
         
         num_count[idx[0].item()] += 1
 
