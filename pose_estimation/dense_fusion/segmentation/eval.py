@@ -35,7 +35,7 @@ def visualize(img, label, pred):
     cv2.imshow('Ground Truth', gt)
     cv2.imshow('Prediction', result)
 
-    return cv2.waitKey(20)
+    return cv2.waitKey(0)
 
 
 def main(args):
@@ -82,11 +82,11 @@ def main(args):
         intersection_meter.update(intersection)
         union_meter.update(union)
 
-        avg_acc = acc_meter.average() * 100
-        iou = np.mean(intersection_meter.sum / union_meter.sum) * 100
+        avg_acc = acc_meter.average()
+        iou = intersection_meter.sum / union_meter.sum
 
-        bar.set_description(f'Average acc {avg_acc:.2f} Mean IoU {iou:.2f}')
-        fw.write(f'No. {i} Accuracy {acc} IoU class 0 {intersection[0]/union[0]} class 1 {intersection[1]/union[1]}\n')
+        bar.set_description(f'Average acc {avg_acc:.4f} IoU: mean {iou.mean():.4f} std {iou.std():.4f}')
+        fw.write(f'No. {i} Accuracy {acc} IoU: class 0 {intersection[0]/union[0]} class 1 {intersection[1]/union[1]}\n')
 
         if args.show:
             img = img.data.cpu().numpy()
@@ -101,16 +101,16 @@ def main(args):
         print(f'class {i} IoU {_iou:4f}')
         fw.write(f'class {i} IoU {_iou}\n')
     
-    print(f'Mean IoU: {iou.mean()*100:.2f} Accuracy {acc_meter.average()*100:.2f} Average time {time_meter.average():.4f}')
-    fw.write(f'Mean IoU: {iou.mean()*100} Accuracy {acc_meter.average()*100} Average time {time_meter.average()}\n')
+    print(f'IoU: mean {iou.mean():.4f} std {iou.std():.4f} Accuracy {acc_meter.average():.4f} Average time {time_meter.average():.4f}')
+    fw.write(f'IoU: mean {iou.mean()} std {iou.std()} Accuracy {acc_meter.average()} Average time {time_meter.average()}\n')
     fw.close()
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Eval a SegNet model')
+    parser = argparse.ArgumentParser(description='Evaluation of SegNet model')
     parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root directory')
-    parser.add_argument('--model', type=str, default='pose_estimation/dense_fusion/segmentation/trained_models/01/model_36_0.0028926266822963953.pth', help='full/path/to/trained/model')
-    parser.add_argument('--item', type=str, default='01', help='item number (default: 01 for ape)')
+    parser.add_argument('--model', type=str, default='pose_estimation/dense_fusion/segmentation/trained_models/02/model_57_0.003273797919973731.pth', help='full/path/to/trained/model')
+    parser.add_argument('--item', type=str, default='02', help='item number (default: 01 for ape)')
     parser.add_argument('--show', action='store_const', const=True, default=False, help='visualise results')
     args = parser.parse_args()
 
