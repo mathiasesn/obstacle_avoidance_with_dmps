@@ -109,8 +109,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Evaluation of SegNet model')
     parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root directory')
-    parser.add_argument('--model', type=str, default='pose_estimation/dense_fusion/segmentation/trained_models/02/model_57_0.003273797919973731.pth', help='full/path/to/trained/model')
-    parser.add_argument('--item', type=str, default='02', help='item number (default: 01 for ape)')
+    parser.add_argument('--model', type=str, default='pose_estimation/dense_fusion/segmentation/trained_models/06/model_8_0.00397932343184948.pth', help='full/path/to/trained/model')
+    parser.add_argument('--item', type=str, default='06', help='item number (default: 01 for ape)')
     parser.add_argument('--show', action='store_const', const=True, default=False, help='visualise results')
     args = parser.parse_args()
 

@@ -177,7 +177,7 @@ def main(opt):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Eval a DenseFusion model')
+    parser = argparse.ArgumentParser(description='Evaluate DenseFusion model')
     parser.add_argument('--dataset_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root directory')
     parser.add_argument('--posenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_model_9_0.01310166542980859.pth', help='PoseNet model (full path)')
     parser.add_argument('--refinenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_refine_model_29_0.006821325639856025.pth', help='PoseRefineNet model (full path)')

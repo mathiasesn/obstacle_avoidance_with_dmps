@@ -73,7 +73,7 @@ def main(args):
                 time_str = time.strftime('%Hh %Mm %Ss', time.gmtime(time.time() - st_time))
                 f.write(f'Train time {time_str} Batch {train_time} CEloss {loss.float()}\n')
 
-                if train_time != 0 and train_time % 600 == 0:
+                if train_time != 0 and train_time % 500 == 0:
                     torch.save(model.state_dict(), f'{args.save_dir}/{args.item}/model_current.pth')
 
                 train_time += 1
@@ -129,7 +129,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Training of SegNet model')
-    parser.add_argument('--item', type=str, default='02', help='item to train (default: 01 for ape)')
+    parser.add_argument('--item', type=str, default='06', help='item to train (default: 01 for ape)')
     parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root dir')
     parser.add_argument('--save_dir', type=str, default='pose_estimation/dense_fusion/segmentation/trained_models', help='path to save models')
     parser.add_argument('--batch_size', type=int, default=6, help='batch size (default: 3)')

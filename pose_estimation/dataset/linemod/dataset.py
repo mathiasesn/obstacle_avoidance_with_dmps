@@ -215,7 +215,7 @@ class PoseDataset(data.Dataset):
         # for it in target:
         #    fw.write(f'{it[0]} {it[1]} {it[2]}\n')
         # fw.close()
-
+        
         if self.show:
             src_cv2 = cv2.cvtColor(ori_img, cv2.COLOR_RGB2BGR)
             cv2.imshow('Original image', src_cv2)

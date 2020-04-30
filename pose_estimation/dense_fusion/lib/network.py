@@ -157,6 +157,8 @@ class PoseNet(nn.Module):
             [type] -- [description]
         """
         out_img = self.cnn(img)
+
+        vis_pspnet(out_img)
         
         bs, di, _, _ = out_img.size()
 
@@ -303,3 +305,18 @@ class PoseRefineNet(nn.Module):
         out_tx = torch.index_select(tx[b], 0, obj[b])
 
         return out_rx, out_tx
+
+
+def vis_pspnet(x):
+    import cv2
+    img = x.cpu().data[0].numpy()
+
+    dst = np.ones((img.shape[2], img.shape[1], 3), np.uint8)
+    for ch in img[:,:]:
+        ch = np.abs(np.round(ch)).astype(np.uint8)
+        ch = cv2.cvtColor(ch, cv2.COLOR_RGB2BGR)
+        dst = cv2.addWeighted(dst, 1.0, ch, 0.5, 0)
+
+    dst = cv2.cvtColor(dst, cv2.COLOR_RGB2BGR)
+    cv2.imshow('PSPNet output', dst)
+    cv2.waitKey(0)
