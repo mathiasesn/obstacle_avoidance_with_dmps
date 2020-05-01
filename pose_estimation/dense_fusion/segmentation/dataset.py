@@ -83,15 +83,20 @@ class SegDataset(Dataset):
         img = self.load_image(path=img_path)
         mask = self.load_mask(path=mask_path)
 
+        # cv2.imshow('Original image', cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+
         if self.use_noise:
             choice = random.randint(0, 3)
             if choice == 0:
+                # print('Flipping lr')
                 img = np.fliplr(img)
                 mask = np.fliplr(mask)
             elif choice == 1:
+                # print('Flipping ud')
                 img = np.flipud(img)
                 mask = np.flipud(mask)
             elif choice == 2:
+                # print('Flipping lr and ud')
                 img = np.fliplr(img)
                 img = np.flipud(img)
                 mask = np.fliplr(mask)
@@ -144,8 +149,8 @@ class SegDataset(Dataset):
 
 
 if __name__ == '__main__':
-    data_root = 'pose_estimation/dataset/linemod/Linemod_preprocessed/data/01'
-    dataset = SegDataset(root_dir=data_root, mode='train', use_noise=True)
+    data_root = 'pose_estimation/dataset/linemod/Linemod_preprocessed'
+    dataset = SegDataset(root_dir=data_root, item='09', mode='train', use_noise=True)
 
     for i, data in enumerate(dataset):
         img, mask = data

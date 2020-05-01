@@ -32,7 +32,11 @@ def main(args):
     model = Segnet(input_nbr=3, label_nbr=NUM_CLASSES).cuda()
 
     if args.resume_model != '':
-        model.load_state_dict(torch.load(f'{args.resume_model}/{args.item}/model_current.pth'))
+        model.load_state_dict(torch.load(f'pose_estimation/dense_fusion/segmentation/trained_models/{args.item}/{args.resume_model}'))
+        print(f'Using model --> pose_estimation/dense_fusion/segmentation/trained_models/{args.item}/{args.resume_model}')
+    else:
+        model.load_state_dict(torch.load(f'pose_estimation/dense_fusion/segmentation/trained_models/{args.item}/model_current.pth'))
+        print(f'Using model --> pose_estimation/dense_fusion/segmentation/trained_models/{args.item}/model_current.pth')
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
@@ -129,16 +133,16 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Training of SegNet model')
-    parser.add_argument('--item', type=str, default='06', help='item to train (default: 01 for ape)')
+    parser.add_argument('--item', type=str, required=True, help='item to train (01 for ape)')
     parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root dir')
     parser.add_argument('--save_dir', type=str, default='pose_estimation/dense_fusion/segmentation/trained_models', help='path to save models')
     parser.add_argument('--batch_size', type=int, default=6, help='batch size (default: 3)')
     parser.add_argument('--n_epochs', type=int, default=6000, help='epochs to train (default: 600)')
-    parser.add_argument('--workers', type=int, default=8, help='nunber of data loading workers (default: 8)') # change to 8
+    parser.add_argument('--workers', type=int, default=8, help='number of data loading workers (default: 8)') # change to 8
     parser.add_argument('--lr', type=float, default=0.0001, help='learning rate (default: 0.0001)')
     parser.add_argument('--log_dir', type=str, default='pose_estimation/dense_fusion/segmentation/logs', help='path to save logs')
-    parser.add_argument('--resume_model', type=str, default='', help='resume model path')
-    parser.add_argument('--start_epoch', type=int, default=1, help='which epoch to start')
+    parser.add_argument('--resume_model', type=str, default='', help='resume model name')
+    parser.add_argument('--start_epoch', type=int, required=True, help='which epoch to start')
     args = parser.parse_args()
 
     main(args)

@@ -22,6 +22,7 @@ class AverageMeter():
         self.avg = None
         self.sum = None
         self.count = None
+        self.std = None
 
     def initialize(self, val, n):
         """Intialize values in AverageMeter
@@ -34,6 +35,7 @@ class AverageMeter():
         self.sum = val
         self.count = n
         self.avg = val
+        self.std = 0
         self.initialized = True
 
     def update(self, val, n=1):
@@ -61,6 +63,7 @@ class AverageMeter():
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+        self.std = np.sqrt( ( (self.sum - self.avg)**2 ) / self.count )
     
     def value(self):
         """Get value
@@ -77,6 +80,9 @@ class AverageMeter():
             float -- average
         """
         return self.avg
+
+    def std_dev(self):
+        return self.std
 
 
 def accuracy(pred, label):

@@ -1,7 +1,7 @@
 """Dataset
 """
 
-
+# import open3d as o3d # uncomment to show cloud
 import torch.utils.data as data
 from PIL import Image
 import os
@@ -239,6 +239,10 @@ class PoseDataset(data.Dataset):
             depth_roi_cv2 = cv2.rectangle(depth_roi_cv2, (cmin,rmin), (cmax,rmax), (0,255,0), 3)
             cv2.imshow('Depth image with region of interest', depth_roi_cv2)
 
+            # pcd = o3d.geometry.PointCloud() # uncomment to show cloud
+            # pcd.points = o3d.utility.Vector3dVector(cloud)
+            # o3d.visualization.draw_geometries([pcd])
+
         return torch.from_numpy(cloud.astype(np.float32)), \
                torch.LongTensor(choose.astype(np.int32)), \
                self.norm(torch.from_numpy(img_masked.astype(np.float32))), \
@@ -374,39 +378,13 @@ def ply_vtx(path):
 
 
 if __name__ == '__main__':
-    from tqdm import tqdm
-
     data_root = 'pose_estimation/dataset/linemod/Linemod_preprocessed'
     dataset = PoseDataset('train', 500, True, data_root, 0.03, False, show=True)
 
+    from tqdm import tqdm
     bar = tqdm(dataset)
     for i, data in enumerate(bar):
         points, choose, img, target, model_points, idx = data
-
-        # print(img)
-        # img = img.data.cpu().numpy()
-        # img = np.transpose(img, (1, 2, 0))
-        # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        # cv2.imshow('Region of interest', img)
-
-        # src_roi_cv2 = cv2.rectangle(src_cv2, (cmin,rmin), (cmax,rmax), (0,255,0), 3)
-        # label_cv2 = cv2.imread(self.list_label[index])
-        # dst_cv2 = cv2.addWeighted(src_roi_cv2, 1.0, label_cv2, 0.5, 0)
-        # cv2.imshow('Original image with region of interest', src_roi_cv2)
-        # cv2.imshow('label', label_cv2)
-        # cv2.imshow('Original image with region of interest and label', dst_cv2)
-
-        # roi_cv2 = cv2.cvtColor(p_img, cv2.COLOR_RGB2BGR)
-        # cv2.imshow('Region of interest', roi_cv2)
-
-        # depth_cv2 = cv2.imread(self.list_depth[index], cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
-        # min_val, max_val, _, _ = cv2.minMaxLoc(depth_cv2)
-        # depth_cv2 = cv2.convertScaleAbs(depth_cv2, 0, 255/max_val)
-        # cv2.imshow('Depth image', depth_cv2)
-
-        # depth_roi_cv2 = cv2.cvtColor(depth_cv2, cv2.COLOR_GRAY2BGR)
-        # depth_roi_cv2 = cv2.rectangle(depth_roi_cv2, (cmin,rmin), (cmax,rmax), (0,255,0), 3)
-        # cv2.imshow('Depth image with region of interest', depth_roi_cv2)
 
         key = cv2.waitKey(0)
         if key == 27:

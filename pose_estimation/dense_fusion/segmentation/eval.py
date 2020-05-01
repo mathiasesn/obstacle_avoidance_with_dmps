@@ -53,10 +53,16 @@ def main(args):
 
     criterion = Loss()
 
-    acc_meter = AverageMeter()
-    intersection_meter = AverageMeter()
-    union_meter = AverageMeter()
-    time_meter = AverageMeter()
+    # acc_meter = AverageMeter()
+    # intersection_meter = AverageMeter()
+    # union_meter = AverageMeter()
+    # iou_meter = AverageMeter()
+    # time_meter = AverageMeter()
+    accs = []
+    intersections = []
+    unions = []
+    ious = []
+    times = []
 
     bar = tqdm(dataloader)
     for i, data in enumerate(bar, 0):
@@ -66,7 +72,9 @@ def main(args):
 
         t1 = time.time()
         pred = model(img)
-        time_meter.update(time.time() - t1)
+        # time_meter.update(time.time() - t1)
+        t2 = time.time()
+        times.append((t2 - t1))
 
         pred = pred.data.cpu().detach().numpy()
         pred = pred[0][1]
@@ -76,17 +84,27 @@ def main(args):
         label = label.data.cpu().detach().numpy()
 
         acc, pix = accuracy(pred, label)
-        acc_meter.update(acc, pix)
+        # acc_meter.update(acc, pix)
+        accs.append(acc)
 
         intersection, union = intersection_and_union(pred, label, NUM_CLASSES)
-        intersection_meter.update(intersection)
-        union_meter.update(union)
+        # intersection_meter.update(intersection)
+        # union_meter.update(union)
+        # iou_meter.update( intersection / union )
+        # avg_acc = acc_meter.average()
+        # std_acc = acc_meter.std_dev()
+        # iou = intersection_meter.sum / union_meter.sum
+        # avg_iou = iou_meter.average()
+        # std_iou = iou_meter.std_dev()
+        # bar.set_description(f'Average acc {avg_acc:.4f} IoU: mean {iou.mean():.4f} std {iou.std():.4f}')
+        # fw.write(f'No. {i} Accuracy {acc} IoU: class 0 {intersection[0]/union[0]} class 1 {intersection[1]/union[1]} Prediction time {time_meter.value()}\n')
 
-        avg_acc = acc_meter.average()
-        iou = intersection_meter.sum / union_meter.sum
+        intersections.append(intersection)
+        unions.append(union)
+        ious.append(intersection/union)
 
-        bar.set_description(f'Average acc {avg_acc:.4f} IoU: mean {iou.mean():.4f} std {iou.std():.4f}')
-        fw.write(f'No. {i} Accuracy {acc} IoU: class 0 {intersection[0]/union[0]} class 1 {intersection[1]/union[1]}\n')
+        bar.set_description(f'Accuracy {np.mean(accs):.4f} IoU {np.mean(ious):.4f}')
+        fw.write(f'No. {i} Accuracy {acc} IoU: class 0 {intersection[0]/union[0]} class 1 {intersection[1]/union[1]} Prediction time {t2-t1}\n')
 
         if args.show:
             img = img.data.cpu().numpy()
@@ -96,21 +114,28 @@ def main(args):
                 bar.write('Terminating because of key press')
                 return
 
-    iou = intersection_meter.sum / union_meter.sum
-    for i, _iou in enumerate(iou):
-        print(f'class {i} IoU {_iou:4f}')
-        fw.write(f'class {i} IoU {_iou}\n')
+    # iou = intersection_meter.sum / union_meter.sum
+    # for i, _iou in enumerate(iou):
+    #     print(f'class {i} IoU {_iou:4f}')
+    #     fw.write(f'class {i} IoU {_iou}\n')
     
-    print(f'IoU: mean {iou.mean():.4f} std {iou.std():.4f} Accuracy {acc_meter.average():.4f} Average time {time_meter.average():.4f}')
-    fw.write(f'IoU: mean {iou.mean()} std {iou.std()} Accuracy {acc_meter.average()} Average time {time_meter.average()}\n')
-    fw.close()
+    # print(f'IoU: mean {iou.mean():.4f} std {iou.std():.4f} Accuracy {acc_meter.average():.4f} Average time {time_meter.average():.4f}')
+    # fw.write(f'IoU: mean {iou.mean()} std {iou.std()} Accuracy {acc_meter.average()} Average time {time_meter.average()}\n')
+    # fw.close()
 
+    for i, iou in enumerate(np.transpose(ious)):
+        print(f'IoU Class {i} mean {np.mean(iou):.4f} std {np.std(iou):.4f}')
+        fw.write(f'IoU Class {i} mean {np.mean(iou)} std {np.std(iou)}\n')
+
+    print(f'IoU mean {np.mean(ious):.4f} std {np.std(ious):.4f} Accuracy mean {np.mean(accs):.4f} std {np.std(accs):.4f} Time mean {np.mean(times):.4f} std {np.std(times):.4f}')
+    fw.write(f'IoU mean {np.mean(ious)} std {np.std(ious)} Accuracy mean {np.mean(accs)} std {np.std(accs)} Time mean {np.mean(times)} std {np.std(times)}\n')
+    fw.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Evaluation of SegNet model')
     parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='dataset root directory')
-    parser.add_argument('--model', type=str, default='pose_estimation/dense_fusion/segmentation/trained_models/06/model_8_0.00397932343184948.pth', help='full/path/to/trained/model')
-    parser.add_argument('--item', type=str, default='06', help='item number (default: 01 for ape)')
+    parser.add_argument('--model', type=str, default='pose_estimation/dense_fusion/segmentation/trained_models/01/model_39_0.0020841858349740505.pth', help='full/path/to/trained/model')
+    parser.add_argument('--item', type=str, default='01', help='item number, fx ape = 01')
     parser.add_argument('--show', action='store_const', const=True, default=False, help='visualise results')
     args = parser.parse_args()
 
