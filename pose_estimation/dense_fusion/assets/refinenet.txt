@@ -1,0 +1,19 @@
+PoseRefineNet with 13 objects and 500 points --> 
+
+PoseRefineNet(
+  (feat): PoseRefineNetFeat(
+    (conv1): Conv1d(3, 64, kernel_size=(1,), stride=(1,))
+    (conv2): Conv1d(64, 128, kernel_size=(1,), stride=(1,))
+    (e_conv1): Conv1d(32, 64, kernel_size=(1,), stride=(1,))
+    (e_conv2): Conv1d(64, 128, kernel_size=(1,), stride=(1,))
+    (conv5): Conv1d(384, 512, kernel_size=(1,), stride=(1,))
+    (conv6): Conv1d(512, 1024, kernel_size=(1,), stride=(1,))
+    (ap1): AvgPool1d(kernel_size=(500,), stride=(500,), padding=(0,))
+  )
+  (conv1_r): Linear(in_features=1024, out_features=512, bias=True)
+  (conv1_t): Linear(in_features=1024, out_features=512, bias=True)
+  (conv2_r): Linear(in_features=512, out_features=128, bias=True)
+  (conv2_t): Linear(in_features=512, out_features=128, bias=True)
+  (conv3_r): Linear(in_features=128, out_features=52, bias=True)
+  (conv3_t): Linear(in_features=128, out_features=39, bias=True)
+)

@@ -1,4 +1,4 @@
-"""Evaluation
+"""Evaluation of implemented DenseFusion
 """
 
 import os

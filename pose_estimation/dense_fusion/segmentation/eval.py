@@ -52,12 +52,7 @@ def main(args):
     fw = open(f'{output_result_dir}/eval_result_logs.txt', 'w')
 
     criterion = Loss()
-
-    # acc_meter = AverageMeter()
-    # intersection_meter = AverageMeter()
-    # union_meter = AverageMeter()
-    # iou_meter = AverageMeter()
-    # time_meter = AverageMeter()
+    
     accs = []
     intersections = []
     unions = []
@@ -72,7 +67,6 @@ def main(args):
 
         t1 = time.time()
         pred = model(img)
-        # time_meter.update(time.time() - t1)
         t2 = time.time()
         times.append((t2 - t1))
 
@@ -84,20 +78,9 @@ def main(args):
         label = label.data.cpu().detach().numpy()
 
         acc, pix = accuracy(pred, label)
-        # acc_meter.update(acc, pix)
         accs.append(acc)
 
         intersection, union = intersection_and_union(pred, label, NUM_CLASSES)
-        # intersection_meter.update(intersection)
-        # union_meter.update(union)
-        # iou_meter.update( intersection / union )
-        # avg_acc = acc_meter.average()
-        # std_acc = acc_meter.std_dev()
-        # iou = intersection_meter.sum / union_meter.sum
-        # avg_iou = iou_meter.average()
-        # std_iou = iou_meter.std_dev()
-        # bar.set_description(f'Average acc {avg_acc:.4f} IoU: mean {iou.mean():.4f} std {iou.std():.4f}')
-        # fw.write(f'No. {i} Accuracy {acc} IoU: class 0 {intersection[0]/union[0]} class 1 {intersection[1]/union[1]} Prediction time {time_meter.value()}\n')
 
         intersections.append(intersection)
         unions.append(union)
@@ -113,15 +96,6 @@ def main(args):
             if key == 27:
                 bar.write('Terminating because of key press')
                 return
-
-    # iou = intersection_meter.sum / union_meter.sum
-    # for i, _iou in enumerate(iou):
-    #     print(f'class {i} IoU {_iou:4f}')
-    #     fw.write(f'class {i} IoU {_iou}\n')
-    
-    # print(f'IoU: mean {iou.mean():.4f} std {iou.std():.4f} Accuracy {acc_meter.average():.4f} Average time {time_meter.average():.4f}')
-    # fw.write(f'IoU: mean {iou.mean()} std {iou.std()} Accuracy {acc_meter.average()} Average time {time_meter.average()}\n')
-    # fw.close()
 
     for i, iou in enumerate(np.transpose(ious)):
         print(f'IoU Class {i} mean {np.mean(iou):.4f} std {np.std(iou):.4f}')

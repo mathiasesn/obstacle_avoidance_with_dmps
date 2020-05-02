@@ -1,9 +1,10 @@
 """Network
 """
 
-
-import argparse
 import os
+import sys
+sys.path.insert(0, os.getcwd())
+import argparse
 import random
 import torch
 import torch.nn as nn
@@ -157,8 +158,6 @@ class PoseNet(nn.Module):
             [type] -- [description]
         """
         out_img = self.cnn(img)
-
-        vis_pspnet(out_img)
         
         bs, di, _, _ = out_img.size()
 
@@ -307,16 +306,19 @@ class PoseRefineNet(nn.Module):
         return out_rx, out_tx
 
 
-def vis_pspnet(x):
-    import cv2
-    img = x.cpu().data[0].numpy()
+if __name__ == '__main__':
+    num_objects = 13
+    num_points = 500
 
-    dst = np.ones((img.shape[2], img.shape[1], 3), np.uint8)
-    for ch in img[:,:]:
-        ch = np.abs(np.round(ch)).astype(np.uint8)
-        ch = cv2.cvtColor(ch, cv2.COLOR_RGB2BGR)
-        dst = cv2.addWeighted(dst, 1.0, ch, 0.5, 0)
+    print(f'PoseNet with {num_objects} objects and {num_points} points -->')
+    posenet_path = 'pose_estimation/dense_fusion/trained_models/linemod/pose_model_9_0.01310166542980859.pth'
+    estimator = PoseNet(num_points=num_points, num_obj=num_objects)
+    estimator.load_state_dict(torch.load(posenet_path))
+    print(estimator)
 
-    dst = cv2.cvtColor(dst, cv2.COLOR_RGB2BGR)
-    cv2.imshow('PSPNet output', dst)
-    cv2.waitKey(0)
+
+    print(f'PoseRefineNet with {num_objects} objects and {num_points} points -->')
+    refinenet_path = 'pose_estimation/dense_fusion/trained_models/linemod/pose_refine_model_35_0.006020029904859344.pth'
+    refiner = PoseRefineNet(num_points=num_points, num_obj=num_objects)
+    refiner.load_state_dict(torch.load(refinenet_path))
+    print(refiner)

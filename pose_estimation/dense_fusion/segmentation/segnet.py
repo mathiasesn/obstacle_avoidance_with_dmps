@@ -148,9 +148,12 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from torchviz import make_dot
 
-    model = Segnet(input_nbr=3, label_nbr=3)
+    model = Segnet(input_nbr=3, label_nbr=2)
+    print(f'SegNet model with 3 inpunt and 2 outputs -->')
     print(model)
 
+
+    model = Segnet(input_nbr=3, label_nbr=3)
     print('Press ESC to quit')
     while True:
         src = torch.rand([4, 3, 224, 224])
