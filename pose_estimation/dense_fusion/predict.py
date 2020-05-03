@@ -30,7 +30,8 @@ from pose_estimation.dense_fusion.lib.utils import KNearestNeighbor
 def visualize(pcd_target, img_path, depth_path, win_name='RGBD with points'):
     color_raw = o3d.io.read_image(img_path)
     depth_raw = o3d.io.read_image(depth_path)
-    rgbd_img = o3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw, depth_scale=1.0, convert_rgb_to_intensity=False)
+    # rgbd_img = o3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw, depth_scale=1.0, convert_rgb_to_intensity=False)
+    rgbd_img = o3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw, convert_rgb_to_intensity=False)
     cam_mat = o3d.camera.PinholeCameraIntrinsic()
     cam_mat.set_intrinsics(640, 480, 572.41140, 573.57043, 325.26110, 242.04899)
     pcd_rgbd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd_img, cam_mat)
@@ -39,7 +40,8 @@ def visualize(pcd_target, img_path, depth_path, win_name='RGBD with points'):
 
 
 class Dataset(Dataset):
-    def __init__(self, root, item, num_points):
+    def __init__(self, root, item, num_points, sigma=0.0):
+        self.sigma = sigma
         self.objs = [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]
         self.num = num_points
 
@@ -111,6 +113,17 @@ class Dataset(Dataset):
         mask = mask_label * mask_depth
 
         img = np.array(img)[:, :, :3]
+
+        # add noise to image
+        rows, cols, chs = img.shape
+        gauss = np.random.normal(0, self.sigma, (rows ,cols, chs)) * 255.0
+        gauss = np.reshape(gauss.astype(img.dtype), (rows, cols, chs))
+        img = img + gauss
+
+        # # show noisy image
+        # cv2.imshow(f'Noisy img std {self.sigma}', cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+        # cv2.waitKey(0)
+
         img = np.transpose(img, (2, 0, 1))
         masked_img = img
 
@@ -150,11 +163,18 @@ class Dataset(Dataset):
         cloud = np.concatenate((pt0, pt1, pt2), axis=1)
         cloud = cloud / 1000.0
 
+        # add noise to cloud
+        rows, cols = cloud.shape
+        gauss = np.random.normal(0, self.sigma, (rows, cols)).astype(cloud.dtype)
+        gauss = np.reshape(gauss, (rows, cols))
+        cloud = cloud + gauss
+
         # # show input cloud
         # pcd_input = o3d.geometry.PointCloud()
         # pcd_input.points = o3d.utility.Vector3dVector(cloud)
         # pcd_input.paint_uniform_color([0, 0, 1])
-        # visualize(pcd_input, self.imgs[index], self.depths[index], 'Input point mask')
+        # # visualize(pcd_input, self.imgs[index], self.depths[index], 'Input point mask')
+        # o3d.visualization.draw_geometries([pcd_input], window_name=f'Input cloud with sigma {self.sigma}')
 
         model_pts = self.pt[obj] / 1000.0
         dellist = [j for j in range(0, len(model_pts))]
@@ -164,8 +184,9 @@ class Dataset(Dataset):
         # # show init pose
         # pcd_init = o3d.geometry.PointCloud()
         # pcd_init.points = o3d.utility.Vector3dVector(model_pts)
-        # pcd_init.paint_uniform_color([0, 0, 1])
-        # visualize(pcd_init, self.imgs[index], self.depths[index], 'Init')
+        # pcd_init.paint_uniform_color([1, 0, 0])
+        # # visualize(pcd_init, self.imgs[index], self.depths[index], 'Init')
+        # o3d.visualization.draw_geometries([pcd_init], window_name='Init pose')
 
         target = np.dot(model_pts, target_r.T)
         target = np.add(target, target_t / 1000.0)
@@ -174,7 +195,8 @@ class Dataset(Dataset):
         # pcd_target = o3d.geometry.PointCloud()
         # pcd_target.points = o3d.utility.Vector3dVector(target)
         # pcd_target.paint_uniform_color([1, 0, 0])
-        # visualize(pcd_target, self.imgs[index], self.depths[index], 'Ground truth pose')
+        # # visualize(pcd_target, self.imgs[index], self.depths[index], 'Ground truth pose')
+        # o3d.visualization.draw_geometries([pcd_target], window_name='Ground truth cloud')
 
         out_t = target_t / 1000.0
 
@@ -217,7 +239,7 @@ def main(args):
     refiner.load_state_dict(torch.load(args.refinenet_model))
     refiner.eval()
 
-    dataset = Dataset(args.data_root, args.item, num_points)
+    dataset = Dataset(args.data_root, args.item, num_points, sigma=args.std)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
     
     sym_list = dataset.get_sym_list()
@@ -349,13 +371,13 @@ def main(args):
         r = r[:3, :3]
         pose = np.dot(model_points, r.T) + t
 
-        # show final pose
-        pcd_img_path, pcd_depth_path = dataset.get_rgbd_path(i)
-        pcd_target = o3d.geometry.PointCloud()
-        pcd_target.points = o3d.utility.Vector3dVector(pose)
-        pcd_target.paint_uniform_color([0, 0, 1])
-        visualize(pcd_target, pcd_img_path, pcd_depth_path, f'Final pose')
-        bar.write(f'Final pose\n Rotation\n{r}\n translation\n{t}')
+        # # show final pose
+        # pcd_img_path, pcd_depth_path = dataset.get_rgbd_path(i)
+        # pcd_target = o3d.geometry.PointCloud()
+        # pcd_target.points = o3d.utility.Vector3dVector(pose)
+        # pcd_target.paint_uniform_color([0, 0, 1])
+        # visualize(pcd_target, pcd_img_path, pcd_depth_path, f'Final pose')
+        # bar.write(f'Final pose\n Rotation\n{r}\n translation\n{t}')
 
         target = target[0].cpu().detach().numpy()
 
@@ -396,7 +418,8 @@ def main(args):
         bar.set_description(f'Succes rate {success_rate:.4f}')
 
     avg_time = np.mean(times)
-    print(f'Average prediction time {avg_time:.4f}')
+    std_time = np.std(times)
+    print(f'Prediction time: Mean {avg_time:.4f} Std {std_time:.4f}')
 
     # for i in range(num_objects):
     #     success_rate = float(success_count[i]) / num_count[i]
@@ -413,6 +436,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='path/to/dataset/root')
     parser.add_argument('--posenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_model_9_0.01310166542980859.pth', help='path/to/posenet/model')
     parser.add_argument('--refinenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_refine_model_29_0.006821325639856025.pth', help='path/to/refinenet/model')
+    parser.add_argument('--std', type=float, default=0.0, help='standard devitaion of the noise added to depth and image')
     args = parser.parse_args()
 
     main(args)

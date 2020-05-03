@@ -32,7 +32,7 @@ img_length = 640
 class PoseDataset(data.Dataset):
     """PoseDataset class
     """
-    def __init__(self, mode, num, add_noise, root, noise_trans, refine, show=False):
+    def __init__(self, mode, num, add_noise, root, noise_trans, refine, show=False, sigma=0.0):
         """Creates a PoseDataset object
         
         Arguments:
@@ -44,6 +44,7 @@ class PoseDataset(data.Dataset):
             noise_trans {[type]} -- [description]
             refine {bool} -- 
         """
+        self.sigma = sigma
         self.objs = [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]
         self.mode = mode
         self.root = root
@@ -142,6 +143,13 @@ class PoseDataset(data.Dataset):
             img = self.trancolor(img)
         
         img = np.array(img)[:, :, :3]
+
+        # add noise to image
+        rows, cols, chs = img.shape
+        gauss = np.random.normal(0, self.sigma, (rows ,cols, chs)) * 255.0
+        gauss = np.reshape(gauss.astype(img.dtype), (rows, cols, chs))
+        img = img + gauss
+
         img = np.transpose(img, (2,0,1))
         img_masked = img
 
@@ -184,6 +192,12 @@ class PoseDataset(data.Dataset):
         pt1 = (xmap_masked - self.cam_cy) * pt2 / self.cam_fy
         cloud = np.concatenate((pt0, pt1, pt2), axis=1)
         cloud = cloud / 1000.0
+
+        # add noise to cloud
+        rows, cols = cloud.shape
+        gauss = np.random.normal(0, self.sigma, (rows, cols)).astype(cloud.dtype)
+        gauss = np.reshape(gauss, (rows, cols))
+        cloud = cloud + gauss
 
         if self.add_noise:
             cloud = np.add(cloud, add_t)
@@ -276,6 +290,9 @@ class PoseDataset(data.Dataset):
             return self.num_pt_mesh_large
         else:
             return self.num_pt_mesh_small
+
+    def set_sigma(self, sigma):
+        self.sigma = sigma
 
 
 def mask_2_bbox(mask):

@@ -50,8 +50,8 @@ def main(opt):
     refiner.eval()
 
     testdataset = PoseDataset('eval', num_points, False, opt.dataset_root, 0.0, True)
-    # testdataloader = torch.utils.data.DataLoader(testdataset, batch_size=1, shuffle=False, num_workers=8)
-    testdataloader = torch.utils.data.DataLoader(testdataset, batch_size=1, shuffle=False, num_workers=1)
+    testdataloader = torch.utils.data.DataLoader(testdataset, batch_size=1, shuffle=False, num_workers=8)
+    # testdataloader = torch.utils.data.DataLoader(testdataset, batch_size=1, shuffle=False, num_workers=1)
 
     sym_list = testdataset.get_sym_list()
     num_points_mesh = testdataset.get_num_points_mesh()
@@ -65,115 +65,132 @@ def main(opt):
         diameter.append(meta[obj]['diameter'] / 1000.0 * 0.1)
     print(diameter)
 
-    success_count = [0 for i in range(num_objects)]
-    num_count = [0 for i in range(num_objects)]
+    sigmas = [0.0, 0.001, 0.005, 0.01, 0.02, 0.03]
 
-    fw = open(f'{output_result_dir}/eval_result_logs.txt', 'w')
+    for sigma in sigmas:
+        print(f'Evaluation with standard deviation of {sigma}')
+        testdataset.set_sigma(sigma)
 
-    times = []
+        success_count = [0 for i in range(num_objects)]
+        num_count = [0 for i in range(num_objects)]
+        dists = [[] for i in range(num_objects)]
+        all_dists = []
+        times = []
 
-    bar = tqdm(testdataloader)
-    for i, data in enumerate(bar, 0):
-        points, choose, img, target, model_points, idx = data
+        fw = open(f'{output_result_dir}/eval_result_{sigma}_logs.txt', 'w')
 
-        if len(points.size()) == 2:
-            # print(f'No.{i} NOT Pass! Lost detection!')
-            bar.set_description(f'No.{i} NOT Pass! Lost detection!')
-            fw.write(f'No. {i} NOT Pass! Lost detection!\n')
-            continue
-        
-        points = Variable(points).cuda()
-        choose = Variable(choose).cuda()
-        img = Variable(img).cuda()
-        target = Variable(target).cuda()
-        model_points = Variable(model_points).cuda()
-        idx = Variable(idx).cuda()
+        bar = tqdm(testdataloader)
+        for i, data in enumerate(bar, 0):
+            points, choose, img, target, model_points, idx = data
 
-        t1 = time.time()
-
-        pred_r, pred_t, pred_c, emb = estimator(img, points, choose, idx)
-        pred_r = pred_r / torch.norm(pred_r, dim=2).view(1, num_points, 1)
-        pred_c = pred_c.view(bs, num_points)
-        how_max, which_max = torch.max(pred_c, 1)
-        pred_t = pred_t.view(bs * num_points, 1, 3)
-
-        my_r = pred_r[0][which_max[0]].view(-1).cpu().data.numpy()
-        my_t = (points.view(bs * num_points, 1, 3) + pred_t)[which_max[0]].view(-1).cpu().data.numpy()
-        my_pred = np.append(my_r, my_t)
-
-        for ite in range(0, iteration):
-            T = Variable(torch.from_numpy(my_t.astype(np.float32))).cuda().view(1, 3).repeat(num_points, 1).contiguous().view(1, num_points, 3)
-            my_mat = quaternion_matrix(my_r)
-            R = Variable(torch.from_numpy(my_mat[:3, :3].astype(np.float32))).cuda().view(1, 3, 3)
-            my_mat[0:3, 3] = my_t
+            if len(points.size()) == 2:
+                # print(f'No.{i} NOT Pass! Lost detection!')
+                bar.set_description(f'NOT Pass! Lost detection!')
+                fw.write(f'No. {i} NOT Pass! Lost detection!\n')
+                continue
             
-            new_points = torch.bmm((points - T), R).contiguous()
-            pred_r, pred_t = refiner(new_points, emb, idx)
-            pred_r = pred_r.view(1, 1, -1)
-            pred_r = pred_r / (torch.norm(pred_r, dim=2).view(1, 1, 1))
-            my_r_2 = pred_r.view(-1).cpu().data.numpy()
-            my_t_2 = pred_t.view(-1).cpu().data.numpy()
-            my_mat_2 = quaternion_matrix(my_r_2)
-            my_mat_2[0:3, 3] = my_t_2
+            points = Variable(points).cuda()
+            choose = Variable(choose).cuda()
+            img = Variable(img).cuda()
+            target = Variable(target).cuda()
+            model_points = Variable(model_points).cuda()
+            idx = Variable(idx).cuda()
 
-            my_mat_final = np.dot(my_mat, my_mat_2)
-            my_r_final = copy.deepcopy(my_mat_final)
-            my_r_final[0:3, 3] = 0
-            my_r_final = quaternion_from_matrix(my_r_final, True)
-            my_t_final = np.array([my_mat_final[0][3], my_mat_final[1][3], my_mat_final[2][3]])
+            t1 = time.time()
 
-            my_pred = np.append(my_r_final, my_t_final)
-            my_r = my_r_final # quaternion
-            my_t = my_t_final # translation
+            pred_r, pred_t, pred_c, emb = estimator(img, points, choose, idx)
+            pred_r = pred_r / torch.norm(pred_r, dim=2).view(1, num_points, 1)
+            pred_c = pred_c.view(bs, num_points)
+            how_max, which_max = torch.max(pred_c, 1)
+            pred_t = pred_t.view(bs * num_points, 1, 3)
 
-        model_points = model_points[0].cpu().detach().numpy()
-        my_r = quaternion_matrix(my_r)[:3, :3]
-        pred = np.dot(model_points, my_r.T) + my_t
-        target = target[0].cpu().detach().numpy()
+            my_r = pred_r[0][which_max[0]].view(-1).cpu().data.numpy()
+            my_t = (points.view(bs * num_points, 1, 3) + pred_t)[which_max[0]].view(-1).cpu().data.numpy()
+            my_pred = np.append(my_r, my_t)
 
-        if idx[0].item() in sym_list:
-            pred = torch.from_numpy(pred.astype(np.float32)).cuda().transpose(1, 0).contiguous()
-            target = torch.from_numpy(target.astype(np.float32)).cuda().transpose(1, 0).contiguous()
-            inds = knn(target.unsqueeze(0), pred.unsqueeze(0))
-            target = torch.index_select(target, 1, inds.view(-1) - 1)
-            dis = torch.mean(torch.norm((pred.transpose(1, 0) - target.transpose(1, 0)), dim=1), dim=0).item()
-        else:
-            dis = np.mean(np.linalg.norm(pred - target, axis=1))
+            for ite in range(0, iteration):
+                T = Variable(torch.from_numpy(my_t.astype(np.float32))).cuda().view(1, 3).repeat(num_points, 1).contiguous().view(1, num_points, 3)
+                my_mat = quaternion_matrix(my_r)
+                R = Variable(torch.from_numpy(my_mat[:3, :3].astype(np.float32))).cuda().view(1, 3, 3)
+                my_mat[0:3, 3] = my_t
+                
+                new_points = torch.bmm((points - T), R).contiguous()
+                pred_r, pred_t = refiner(new_points, emb, idx)
+                pred_r = pred_r.view(1, 1, -1)
+                pred_r = pred_r / (torch.norm(pred_r, dim=2).view(1, 1, 1))
+                my_r_2 = pred_r.view(-1).cpu().data.numpy()
+                my_t_2 = pred_t.view(-1).cpu().data.numpy()
+                my_mat_2 = quaternion_matrix(my_r_2)
+                my_mat_2[0:3, 3] = my_t_2
+
+                my_mat_final = np.dot(my_mat, my_mat_2)
+                my_r_final = copy.deepcopy(my_mat_final)
+                my_r_final[0:3, 3] = 0
+                my_r_final = quaternion_from_matrix(my_r_final, True)
+                my_t_final = np.array([my_mat_final[0][3], my_mat_final[1][3], my_mat_final[2][3]])
+
+                my_pred = np.append(my_r_final, my_t_final)
+                my_r = my_r_final # quaternion
+                my_t = my_t_final # translation
+
+            model_points = model_points[0].cpu().detach().numpy()
+            my_r = quaternion_matrix(my_r)[:3, :3]
+            pred = np.dot(model_points, my_r.T) + my_t
+            target = target[0].cpu().detach().numpy()
+
+            if idx[0].item() in sym_list:
+                pred = torch.from_numpy(pred.astype(np.float32)).cuda().transpose(1, 0).contiguous()
+                target = torch.from_numpy(target.astype(np.float32)).cuda().transpose(1, 0).contiguous()
+                inds = knn(target.unsqueeze(0), pred.unsqueeze(0))
+                target = torch.index_select(target, 1, inds.view(-1) - 1)
+                dis = torch.mean(torch.norm((pred.transpose(1, 0) - target.transpose(1, 0)), dim=1), dim=0).item()
+            else:
+                dis = np.mean(np.linalg.norm(pred - target, axis=1))
+            
+            t2 = time.time()
+            times.append((t2 - t1))
+
+            if dis < diameter[idx[0].item()]:
+                success_count[idx[0].item()] += 1
+                bar.set_description(f'Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
+                fw.write(f'No. {i} Pass! Distance: {dis}\n')
+            else:
+                bar.set_description(f'NOT Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
+                fw.write(f'No. {i} NOT Pass! Distance: {dis}\n')
+            
+            num_count[idx[0].item()] += 1
+            dists[idx[0].item()].append(dis)
+            all_dists.append(dis)
+
+            # fw_pose = open(f'{output_result_dir}/pose/{i}.txt', 'w')
+            # fw_pose.write(f'{my_r[0,0]} {my_r[1,0]} {my_r[2,0]} {my_r[0,1]} {my_r[1,1]} {my_r[2,1]} {my_r[0,2]} {my_r[1,2]} {my_r[2,2]} {my_t[0]} {my_t[1]} {my_t[2]}')
+            # fw_pose.close()
+
+            # fw_pred = open(f'{output_result_dir}/prediction/{i}.xyz', 'w')
+            # for it in pred:
+            #     fw_pred.write(f'{it[0]} {it[1]} {it[2]}\n')
+            # fw_pred.close()
         
-        t2 = time.time()
-        times.append((t2 - t1))
+        for i in range(num_objects):
+            avg_dist = np.mean(dists[i])
+            std_dist = np.std(dists[i])
+            print(f'Object {objlist[i]} Success rate {float(success_count[i]) / num_count[i]} Distance {avg_dist:.4f} std {std_dist:.4f}')
+            fw.write(f'Object {objlist[i]} Success rate {float(success_count[i]) / num_count[i]} Distance {avg_dist} std {std_dist}\n')
 
-        if dis < diameter[idx[0].item()]:
-            success_count[idx[0].item()] += 1
-            bar.set_description(f'No.{i} Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
-            fw.write(f'No. {i} Pass! Distance: {dis}\n')
-        else:
-            bar.set_description(f'No.{i} NOT Pass! Distance: {dis:.6f} Success rate: {float(sum(success_count)+1) / (sum(num_count)+1):.3f}')
-            fw.write(f'No. {i} NOT Pass! Distance: {dis}\n')
-        
-        num_count[idx[0].item()] += 1
+        print(f'ALL success rate: {float(sum(success_count)) / sum(num_count)}')
 
-        fw_pose = open(f'{output_result_dir}/pose/{i}.txt', 'w')
-        fw_pose.write(f'{my_r[0,0]} {my_r[1,0]} {my_r[2,0]} {my_r[0,1]} {my_r[1,1]} {my_r[2,1]} {my_r[0,2]} {my_r[1,2]} {my_r[2,2]} {my_t[0]} {my_t[1]} {my_t[2]}')
-        fw_pose.close()
+        avg_dist = np.mean(all_dists)
+        std_dist = np.std(all_dists)
+        print(f'Distance {avg_dist:.4f} std {std_dist:.4f}')
 
-        fw_pred = open(f'{output_result_dir}/prediction/{i}.xyz', 'w')
-        for it in pred:
-           fw_pred.write(f'{it[0]} {it[1]} {it[2]}\n')
-        fw_pred.close()
+        avg_time = np.mean(times)
+        std_time = np.std(times)
+        print(f'Prediction time {avg_time:.4f} std {std_time:.4f}')
 
-    avg_time = sum(times) / len(times)
-    
-    for i in range(num_objects):
-        print(f'Object {objlist[i]} success rate: {float(success_count[i]) / num_count[i]}')
-        fw.write(f'Object {objlist[i]} success rate: {float(success_count[i]) / num_count[i]}\n')
-
-    print(f'ALL success rate: {float(sum(success_count)) / sum(num_count)}')
-    print(f'Average prediction time: {avg_time}')
-    fw.write(f'ALL success rate: {float(sum(success_count)) / sum(num_count)}\n')
-    fw.write(f'Average prediction time: {avg_time}\n')
-
-    fw.close()
+        fw.write(f'ALL success rate: {float(sum(success_count)) / sum(num_count)}\n')
+        fw.write(f'Distance {avg_dist} std {std_dist}\n')
+        fw.write(f'Prediction time {avg_time} std {std_time}\n')
+        fw.close()
 
 
 if __name__ == '__main__':
