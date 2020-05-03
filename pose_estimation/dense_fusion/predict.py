@@ -30,7 +30,7 @@ from pose_estimation.dense_fusion.lib.utils import KNearestNeighbor
 def visualize(pcd_target, img_path, depth_path, win_name='RGBD with points'):
     color_raw = o3d.io.read_image(img_path)
     depth_raw = o3d.io.read_image(depth_path)
-    rgbd_img = o3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw)
+    rgbd_img = o3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw, depth_scale=1.0, convert_rgb_to_intensity=False)
     cam_mat = o3d.camera.PinholeCameraIntrinsic()
     cam_mat.set_intrinsics(640, 480, 572.41140, 573.57043, 325.26110, 242.04899)
     pcd_rgbd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd_img, cam_mat)
