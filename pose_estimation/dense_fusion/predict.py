@@ -24,7 +24,7 @@ from pose_estimation.dense_fusion.lib.network import PoseNet, PoseRefineNet
 from pose_estimation.dense_fusion.lib.loss import Loss
 from pose_estimation.dense_fusion.lib.loss_refiner import Loss_refine
 from pose_estimation.dense_fusion.lib.transformations import euler_matrix, quaternion_matrix, quaternion_from_matrix
-from pose_estimation.dense_fusion.lib.utils import KNearestNeighbor
+from pose_estimation.dense_fusion.lib.knn.__init__ import KNearestNeighbor
 
 
 def visualize(pcd_target, img_path, depth_path, win_name='RGBD with points'):
@@ -131,9 +131,9 @@ class Dataset(Dataset):
         rmin, rmax, cmin, cmax = get_bbox(masked_bbox)
         masked_img = masked_img[:, rmin:rmax, cmin:cmax]
 
-        # Uncomment to show cropped image
-        crop_img = np.transpose(masked_img, (1, 2, 0))
-        cv2.imshow('Cropped image', cv2.cvtColor(crop_img, cv2.COLOR_RGB2BGR))
+        # # Uncomment to show cropped image
+        # crop_img = np.transpose(masked_img, (1, 2, 0))
+        # cv2.imshow('Cropped image', cv2.cvtColor(crop_img, cv2.COLOR_RGB2BGR))
 
         target_r = np.resize(np.array(meta['cam_R_m2c']), (3,3))
         target_t = np.array(meta['cam_t_m2c'])
@@ -394,7 +394,8 @@ def main(args):
             target = target.transpose(1, 0)
             target = target.contiguous()
 
-            inds = knn(target.unsqueeze(0), pose.unsequeeze(0))
+            # inds = knn(target.unsqueeze(0), pose.unsqueeze(0))
+            inds = knn.forward(target.unsqueeze(0), pose.unsqueeze(0))
             inds = inds.view(-1)
 
             target = torch.index_select(target, 1, inds-1)
@@ -432,7 +433,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Predict with DenseFusion')
-    parser.add_argument('--item', type=str, default='01', help='item to predict (default: 01 for ape)')
+    parser.add_argument('--item', type=str, default='10', help='item to predict (default: 01 for ape)')
     parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='path/to/dataset/root')
     parser.add_argument('--posenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_model_9_0.01310166542980859.pth', help='path/to/posenet/model')
     parser.add_argument('--refinenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_refine_model_29_0.006821325639856025.pth', help='path/to/refinenet/model')
