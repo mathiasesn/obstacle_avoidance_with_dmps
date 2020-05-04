@@ -131,9 +131,9 @@ class Dataset(Dataset):
         rmin, rmax, cmin, cmax = get_bbox(masked_bbox)
         masked_img = masked_img[:, rmin:rmax, cmin:cmax]
 
-        # # Uncomment to show cropped image
-        # crop_img = np.transpose(masked_img, (1, 2, 0))
-        # cv2.imshow('Cropped image', cv2.cvtColor(crop_img, cv2.COLOR_RGB2BGR))
+        # Uncomment to show cropped image
+        crop_img = np.transpose(masked_img, (1, 2, 0))
+        cv2.imshow('Cropped image', cv2.cvtColor(crop_img, cv2.COLOR_RGB2BGR))
 
         target_r = np.resize(np.array(meta['cam_R_m2c']), (3,3))
         target_t = np.array(meta['cam_t_m2c'])
@@ -173,7 +173,7 @@ class Dataset(Dataset):
         # pcd_input = o3d.geometry.PointCloud()
         # pcd_input.points = o3d.utility.Vector3dVector(cloud)
         # pcd_input.paint_uniform_color([0, 0, 1])
-        # # visualize(pcd_input, self.imgs[index], self.depths[index], 'Input point mask')
+        # visualize(pcd_input, self.imgs[index], self.depths[index], 'Input point mask')
         # o3d.visualization.draw_geometries([pcd_input], window_name=f'Input cloud with sigma {self.sigma}')
 
         model_pts = self.pt[obj] / 1000.0
@@ -185,17 +185,17 @@ class Dataset(Dataset):
         # pcd_init = o3d.geometry.PointCloud()
         # pcd_init.points = o3d.utility.Vector3dVector(model_pts)
         # pcd_init.paint_uniform_color([1, 0, 0])
-        # # visualize(pcd_init, self.imgs[index], self.depths[index], 'Init')
+        # visualize(pcd_init, self.imgs[index], self.depths[index], 'Init')
         # o3d.visualization.draw_geometries([pcd_init], window_name='Init pose')
 
         target = np.dot(model_pts, target_r.T)
         target = np.add(target, target_t / 1000.0)
 
-        # # show ground truth
+        # show ground truth
         # pcd_target = o3d.geometry.PointCloud()
         # pcd_target.points = o3d.utility.Vector3dVector(target)
         # pcd_target.paint_uniform_color([1, 0, 0])
-        # # visualize(pcd_target, self.imgs[index], self.depths[index], 'Ground truth pose')
+        # visualize(pcd_target, self.imgs[index], self.depths[index], 'Ground truth pose')
         # o3d.visualization.draw_geometries([pcd_target], window_name='Ground truth cloud')
 
         out_t = target_t / 1000.0
