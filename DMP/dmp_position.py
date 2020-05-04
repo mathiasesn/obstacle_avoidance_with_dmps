@@ -66,7 +66,7 @@ class PositionDMP():
 
         return self.p, self.dp, self.ddp
 
-    def move_and_plot_dmp_obs(self, demo_p, ts, tau, obs_traj, start_obs_mov):
+    def rollout_w_obstacle(self, ts, tau, obs_traj, start_obs_mov):
         self.reset()
         if np.isscalar(tau):
             tau = np.full_like(ts, tau)
@@ -91,7 +91,13 @@ class PositionDMP():
                 if not stop_mov:
                     obs_p.append((self.obstacles.x, self.obstacles.y, self.obstacles.z))
             
-        def one_step_and_animate(i, plot_dmp, dmp_points, plot_obs, obs_points, update_bar):
+        return dmp_p, obs_p
+
+    def move_and_plot_dmp_obs(self, demo_p, ts, tau, obs_traj, start_obs_mov):
+        n_steps = len(ts)
+        dmp_p, obs_p = self.rollout_w_obstacle(ts, tau, obs_traj, start_obs_mov)
+
+        def animate(i, plot_dmp, dmp_points, plot_obs, obs_points, update_bar):
             # Updating progress bar
             update_bar(1)
             # Plotting DMP
@@ -99,9 +105,13 @@ class PositionDMP():
             plot_dmp.set_3d_properties(dmp_points[0:i+1,2])
 
             # Plotting obstacle
-            if (len(obs_points) - 1 > self.obs_plt_indx) and (i > start_obs_mov):
+            if (len(obs_points) - 2 > self.obs_plt_indx) and (i > start_obs_mov): # Showing with magma color while moving and without when not
                 plot_obs[0].remove()
                 plot_obs[0] = ax.plot_surface(obs_points[self.obs_plt_indx][0], obs_points[self.obs_plt_indx][1], obs_points[self.obs_plt_indx][2], cmap="magma")
+                self.obs_plt_indx += 1
+            elif (len(obs_points) - 1 > self.obs_plt_indx) and (i > start_obs_mov):
+                plot_obs[0].remove()
+                plot_obs[0] = ax.plot_surface(obs_points[self.obs_plt_indx][0], obs_points[self.obs_plt_indx][1], obs_points[self.obs_plt_indx][2], rstride=1, cstride=1)
                 self.obs_plt_indx += 1
 
        
@@ -121,13 +131,12 @@ class PositionDMP():
             plot_obs = [ax.plot_surface(obs_p[0][0], obs_p[0][1], obs_p[0][2], rstride=1, cstride=1)]
             self.obs_plt_indx = 0
 
-            ani = animation.FuncAnimation(fig, one_step_and_animate, fargs=[plot_dmp, dmp_p, plot_obs, obs_p, tbar.update], frames=n_steps-1, interval=25, blit=False, repeat=False)
+            ani = animation.FuncAnimation(fig, animate, fargs=[plot_dmp, dmp_p, plot_obs, obs_p, tbar.update], frames=n_steps-1, interval=25, blit=False, repeat=False)
             
             # Set up formatting for the movie files
             Writer = animation.writers['ffmpeg']
             writer = Writer(fps=60, bitrate=2000)
             #ani.save('im.mp4', writer=writer)
-            #ani.save('sine_wave.gif', writer='imagemagick', fps=1000, dpi=100, bitrate=1800 )
             plt.show()
 
     def rollout(self, ts, tau):
