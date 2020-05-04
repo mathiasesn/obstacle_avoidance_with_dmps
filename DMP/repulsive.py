@@ -49,7 +49,7 @@ def Ct_coupling(p, dp, sphere : Obstacle):
 
     theta   = angle(vec_obj, dp) # Steering angle
     beta    = 20 / np.pi         # Tuning parameter: angle      high beta   -> narrow region of influence of obstacle
-    k       = 15                 # Tuning parameter: distance   high k      -> effect of obstacle decrease quickly with distance
+    k       = 10                 # Tuning parameter: distance   high k      -> effect of obstacle decrease quickly with distance
 
     phi1    = theta * np.exp(-beta * abs(theta)) * np.exp(-k * d)
     phi2    = 0 # Not as relevant since object is a sphere.
@@ -61,7 +61,7 @@ def Ct_coupling(p, dp, sphere : Obstacle):
 
     gamma1 = 1e6
     gamma2 = 0
-    gamma3 = 1.25e4
+    gamma3 = 1e4
 
     Ct = gamma1 * Rdp * phi1 + gamma2 * Rdp * phi2 + gamma3 * Rdp * phi3
     return Ct

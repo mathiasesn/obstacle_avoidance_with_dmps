@@ -6,8 +6,15 @@ from canonical_system import CanonicalSystem
 from obstacle import Obstacle
 from repulsive import Ct, Ct_coupling
 
+# test
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+import mpl_toolkits.mplot3d.axes3d as p3
+import matplotlib.animation as animation
+
+
 class PositionDMP():
-    def __init__(self, n_bfs=10, alpha=48.0, beta=None, cs_alpha=None, cs=None):
+    def __init__(self, n_bfs=10, alpha=48.0, beta=None, cs_alpha=None, cs=None, obstacles=None):
         self.n_bfs = n_bfs
         self.alpha = alpha
         self.beta = beta if beta is not None else self.alpha / 4
@@ -29,6 +36,8 @@ class PositionDMP():
         self.p0 = np.zeros(3)
         self.gp = np.zeros(3)
 
+        self.obstacles = obstacles
+
         self.reset()
 
     def step(self, x, dt, tau):
@@ -40,10 +49,14 @@ class PositionDMP():
         # TODO: Implement the transformation system differential equation for the acceleration, given that you know the
         # values of the following variables:
         # self.alpha, self.beta, self.gp, self.p, self.dp, tau, x
-        #sphere  = Obstacle([0.575, 0.30, 0.45])
-        sphere = Obstacle([0., 0.25, 0.80])
 
-        self.ddp = (self.alpha*( self.beta * (self.gp - self.p) - tau*self.dp ) + fp(x) + Ct(self.p, self.dp, sphere) )/(tau*tau)
+        ###### OLD ######
+        #sphere  = Obstacle([0.575, 0.30, 0.45])
+        #sphere = Obstacle([0., 0.25, 0.80])
+        ###### NEW ######
+
+        
+        self.ddp = (self.alpha*( self.beta * (self.gp - self.p) - tau*self.dp ) + fp(x) + Ct_coupling(self.p, self.dp, self.obstacles) )/(tau*tau)
 
         # Integrate acceleration to obtain velocity
         self.dp += self.ddp * dt
@@ -52,6 +65,79 @@ class PositionDMP():
         self.p += self.dp * dt
 
         return self.p, self.dp, self.ddp
+
+    def rollout_w_obstacle(self, ts, tau, obs_traj, start_obs_mov):
+        self.reset()
+        if np.isscalar(tau):
+            tau = np.full_like(ts, tau)
+
+        x = self.cs.rollout(ts, tau)  # Integrate canonical system
+        dt = np.gradient(ts) # Differential time vector
+
+        n_steps = len(ts)
+
+        # Generating the points for both obstacle and DMP
+        dmp_p = np.empty((n_steps, 3))
+        obs_p = []
+        obs_p.append((self.obstacles.x, self.obstacles.y, self.obstacles.z))
+
+        for i in range(n_steps):
+            dmp_p[i], _, _ = self.step(x[i], dt[i], tau[i])
+            
+            # Moving obstacle
+            # First moving obstacle at index DMP
+            if i > start_obs_mov:
+                stop_mov = self.obstacles.move_sphere(obs_traj)
+                if not stop_mov:
+                    obs_p.append((self.obstacles.x, self.obstacles.y, self.obstacles.z))
+            
+        return dmp_p, obs_p
+
+    def move_and_plot_dmp_obs(self, demo_p, ts, tau, obs_traj, start_obs_mov):
+        n_steps = len(ts)
+        dmp_p, obs_p = self.rollout_w_obstacle(ts, tau, obs_traj, start_obs_mov)
+
+        def animate(i, plot_dmp, dmp_points, plot_obs, obs_points, update_bar):
+            # Updating progress bar
+            update_bar(1)
+            # Plotting DMP
+            plot_dmp.set_data(dmp_points[0:i+1,0], dmp_points[0:i+1,1])
+            plot_dmp.set_3d_properties(dmp_points[0:i+1,2])
+
+            # Plotting obstacle
+            if (len(obs_points) - 2 > self.obs_plt_indx) and (i > start_obs_mov): # Showing with magma color while moving and without when not
+                plot_obs[0].remove()
+                plot_obs[0] = ax.plot_surface(obs_points[self.obs_plt_indx][0], obs_points[self.obs_plt_indx][1], obs_points[self.obs_plt_indx][2], cmap="magma")
+                self.obs_plt_indx += 1
+            elif (len(obs_points) - 1 > self.obs_plt_indx) and (i > start_obs_mov):
+                plot_obs[0].remove()
+                plot_obs[0] = ax.plot_surface(obs_points[self.obs_plt_indx][0], obs_points[self.obs_plt_indx][1], obs_points[self.obs_plt_indx][2], rstride=1, cstride=1)
+                self.obs_plt_indx += 1
+
+       
+        with tqdm(total=n_steps) as tbar:
+            # Making animation
+            fig = plt.figure()
+            ax = p3.Axes3D(fig)
+
+            # Static plots and settings
+            # ax.set_xlim(0, 1.2)
+            # ax.set_ylim(0, 1.2)
+            # ax.set_zlim(0, 1.2)
+            ax.view_init(elev=15, azim=-120)
+            ax.plot3D(demo_p[:, 0], demo_p[:, 1], demo_p[:, 2], label='Demonstration')
+
+            plot_dmp = ax.plot3D([], [], [])[0]
+            plot_obs = [ax.plot_surface(obs_p[0][0], obs_p[0][1], obs_p[0][2], rstride=1, cstride=1)]
+            self.obs_plt_indx = 0
+
+            ani = animation.FuncAnimation(fig, animate, fargs=[plot_dmp, dmp_p, plot_obs, obs_p, tbar.update], frames=n_steps-1, interval=25, blit=False, repeat=False)
+            
+            # Set up formatting for the movie files
+            Writer = animation.writers['ffmpeg']
+            writer = Writer(fps=60, bitrate=2000)
+            #ani.save('im.mp4', writer=writer)
+            plt.show()
 
     def rollout(self, ts, tau):
         self.reset()
