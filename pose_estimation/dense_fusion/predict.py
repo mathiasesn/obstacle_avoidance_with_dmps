@@ -27,16 +27,18 @@ from pose_estimation.dense_fusion.lib.transformations import euler_matrix, quate
 from pose_estimation.dense_fusion.lib.knn.__init__ import KNearestNeighbor
 
 
-def visualize(pcd_target, img_path, depth_path, win_name='RGBD with points'):
+def visualize(pcd, target_pcd, img_path, depth_path, win_name='RGBD with points'):
     color_raw = o3d.io.read_image(img_path)
     depth_raw = o3d.io.read_image(depth_path)
     # rgbd_img = o3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw, depth_scale=1.0, convert_rgb_to_intensity=False)
     rgbd_img = o3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw, convert_rgb_to_intensity=False)
+
     cam_mat = o3d.camera.PinholeCameraIntrinsic()
     cam_mat.set_intrinsics(640, 480, 572.41140, 573.57043, 325.26110, 242.04899)
+
     pcd_rgbd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd_img, cam_mat)
 
-    o3d.visualization.draw_geometries([pcd_rgbd, pcd_target], window_name=win_name)
+    o3d.visualization.draw_geometries([pcd_rgbd, pcd, target_pcd], window_name=win_name)
 
 
 class Dataset(Dataset):
@@ -371,15 +373,20 @@ def main(args):
         r = r[:3, :3]
         pose = np.dot(model_points, r.T) + t
 
-        # # show final pose
-        # pcd_img_path, pcd_depth_path = dataset.get_rgbd_path(i)
-        # pcd_target = o3d.geometry.PointCloud()
-        # pcd_target.points = o3d.utility.Vector3dVector(pose)
-        # pcd_target.paint_uniform_color([0, 0, 1])
-        # visualize(pcd_target, pcd_img_path, pcd_depth_path, f'Final pose')
+        # show final pose
+        pcd_img_path, pcd_depth_path = dataset.get_rgbd_path(i)
+        est_pcd = o3d.geometry.PointCloud()
+        est_pcd.points = o3d.utility.Vector3dVector(pose)
+        est_pcd.paint_uniform_color([0, 0, 1])
         # bar.write(f'Final pose\n Rotation\n{r}\n translation\n{t}')
 
         target = target[0].cpu().detach().numpy()
+
+        # show ground truth pose
+        target_pcd = o3d.geometry.PointCloud()
+        target_pcd.points = o3d.utility.Vector3dVector(target)
+        target_pcd.paint_uniform_color([1, 0, 0])
+        visualize(est_pcd, target_pcd, pcd_img_path, pcd_depth_path, f'Final pose (blue) and ground truth (red)')
 
         if idx[0].item() in sym_list:
             pose = pose.astype(np.float32)
@@ -416,7 +423,7 @@ def main(args):
         num_count[idx[0].item()] += 1
 
         success_rate = float(np.sum(success_count)) / np.sum(num_count)
-        bar.set_description(f'Succes rate {success_rate:.4f}')
+        bar.set_description(f'Succes rate {success_rate:.4f} Distance {dis:.4f}')
 
     avg_time = np.mean(times)
     std_time = np.std(times)
@@ -433,7 +440,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Predict with DenseFusion')
-    parser.add_argument('--item', type=str, default='10', help='item to predict (default: 01 for ape)')
+    parser.add_argument('--item', type=str, default='02', help='item to predict (default: 01 for ape)')
     parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='path/to/dataset/root')
     parser.add_argument('--posenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_model_9_0.01310166542980859.pth', help='path/to/posenet/model')
     parser.add_argument('--refinenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_refine_model_29_0.006821325639856025.pth', help='path/to/refinenet/model')
