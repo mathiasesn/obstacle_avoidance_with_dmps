@@ -136,6 +136,10 @@ def main(opt):
             model_points = model_points[0].cpu().detach().numpy()
             my_r = quaternion_matrix(my_r)[:3, :3]
             pred = np.dot(model_points, my_r.T) + my_t
+
+            t2 = time.time()
+            times.append((t2 - t1))
+
             target = target[0].cpu().detach().numpy()
 
             if idx[0].item() in sym_list:
@@ -146,9 +150,6 @@ def main(opt):
                 dis = torch.mean(torch.norm((pred.transpose(1, 0) - target.transpose(1, 0)), dim=1), dim=0).item()
             else:
                 dis = np.mean(np.linalg.norm(pred - target, axis=1))
-            
-            t2 = time.time()
-            times.append((t2 - t1))
 
             if dis < diameter[idx[0].item()]:
                 success_count[idx[0].item()] += 1

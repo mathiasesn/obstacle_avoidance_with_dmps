@@ -6,7 +6,7 @@ from matplotlib import colors as mpl_colors
 objs = [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]
 sigmas = [0.0, 0.001, 0.005, 0.01, 0.02, 0.03]
 obj_names = [
-    'Ape', 'Bench vise', 'Can', 'Camera', 'Cat',
+    'Ape', 'Bench vise', 'Camera', 'Can', 'Cat',
     'Drill', 'Duck', 'Egg box', 'Glue', 'Hole pouncher',
     'Iron', 'Lamp', 'Phone', 'All'
 ]
@@ -27,7 +27,7 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = [mpl_colors.to_rgb(c) for c in prop_cycle.by_key()['color']]
 
 for i, file_path in enumerate(file_paths):
-    print(f'Current file path: {file_path}')
+    # print(f'Current file path: {file_path}')
     f = open(file_path, 'r')
 
     while True:
@@ -55,24 +55,38 @@ for i, file_path in enumerate(file_paths):
             data_all[i, :] = (acc, dist, std)
             break
 
-plt.plot(sigmas, data_objs[:, :, 0])
-plt.ylabel('Accuracy')
+fig, axs = plt.subplots(2,1)
+
+axs[0].plot(sigmas, data_all[:, 0])
+axs[0].set_ylabel('Accuracy [%]')
+axs[0].grid(True)
+axs[0].legend(['All'])
+plt.setp(axs[0].get_xticklabels(), visible=False)
+
+for i in range(len(objs)):
+    axs[1].plot(sigmas, data_objs[:, i, 0], label=obj_names[i])
+axs[1].set_ylabel('Accuracy [%]')
+axs[1].set_xlabel('Standard deviation of added noise')
+axs[1].grid(True)
+axs[1].legend(loc='upper center', bbox_to_anchor=(0.5, -0.3), ncol=4)
+
+fig.tight_layout()
+plt.show()
+
+plt.plot(sigmas, data_all[:, 0], label='All')
+plt.ylabel('Accuracy [%]')
 plt.xlabel('Standard deviation of added noise')
-plt.legend(obj_names)
-plt.grid('on')
+plt.grid(True)
+plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=4)
 plt.tight_layout()
 plt.show()
 
-fig, axs = plt.subplots(2, 1)
-axs[0].plot(sigmas, data_all[:, 0])
-axs[0].set_ylabel('Accuracy')
-axs[0].grid(True)
-plt.setp(axs[0].get_xticklabels(), visible=False)
 
-axs[1].errorbar(sigmas, data_all[:, 1], yerr=data_all[:, 2], capsize=8)
-axs[1].set_ylabel('Distance')
-axs[1].set_xlabel('Standard deviation of added noise')
-axs[1].grid(True)
-
-fig.tight_layout()
+for i in range(len(objs)):
+    plt.plot(sigmas, data_objs[:, i, 0], label=obj_names[i])
+plt.ylabel('Accuracy [%]')
+plt.xlabel('Standard deviation of added noise')
+plt.grid(True)
+plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4)
+plt.tight_layout()
 plt.show()
