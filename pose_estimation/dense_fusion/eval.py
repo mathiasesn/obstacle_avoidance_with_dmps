@@ -27,7 +27,7 @@ from pose_estimation.dense_fusion.lib.network import PoseNet, PoseRefineNet
 from pose_estimation.dense_fusion.lib.loss import Loss
 from pose_estimation.dense_fusion.lib.loss_refiner import Loss_refine
 from pose_estimation.dense_fusion.lib.transformations import euler_matrix, quaternion_matrix, quaternion_from_matrix
-from pose_estimation.dense_fusion.lib.utils import KNearestNeighbor
+from pose_estimation.dense_fusion.lib.knn.__init__ import KNearestNeighbor
 
 
 def main(opt):
@@ -50,8 +50,8 @@ def main(opt):
     refiner.eval()
 
     testdataset = PoseDataset('eval', num_points, False, opt.dataset_root, 0.0, True)
-    testdataloader = torch.utils.data.DataLoader(testdataset, batch_size=1, shuffle=False, num_workers=8)
-    # testdataloader = torch.utils.data.DataLoader(testdataset, batch_size=1, shuffle=False, num_workers=1)
+    # testdataloader = torch.utils.data.DataLoader(testdataset, batch_size=1, shuffle=False, num_workers=8)
+    testdataloader = torch.utils.data.DataLoader(testdataset, batch_size=1, shuffle=False, num_workers=1)
 
     sym_list = testdataset.get_sym_list()
     num_points_mesh = testdataset.get_num_points_mesh()
@@ -136,19 +136,20 @@ def main(opt):
             model_points = model_points[0].cpu().detach().numpy()
             my_r = quaternion_matrix(my_r)[:3, :3]
             pred = np.dot(model_points, my_r.T) + my_t
+
+            t2 = time.time()
+            times.append((t2 - t1))
+
             target = target[0].cpu().detach().numpy()
 
             if idx[0].item() in sym_list:
                 pred = torch.from_numpy(pred.astype(np.float32)).cuda().transpose(1, 0).contiguous()
                 target = torch.from_numpy(target.astype(np.float32)).cuda().transpose(1, 0).contiguous()
-                inds = knn(target.unsqueeze(0), pred.unsqueeze(0))
+                inds = knn.forward(target.unsqueeze(0), pred.unsqueeze(0))
                 target = torch.index_select(target, 1, inds.view(-1) - 1)
                 dis = torch.mean(torch.norm((pred.transpose(1, 0) - target.transpose(1, 0)), dim=1), dim=0).item()
             else:
                 dis = np.mean(np.linalg.norm(pred - target, axis=1))
-            
-            t2 = time.time()
-            times.append((t2 - t1))
 
             if dis < diameter[idx[0].item()]:
                 success_count[idx[0].item()] += 1
