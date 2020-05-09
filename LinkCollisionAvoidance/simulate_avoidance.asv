@@ -78,7 +78,7 @@ tiledlayout(3,1);
 nexttile
 plot((1:4222)*dt,traj(1,:), 'LineWidth', 1.5)
 hold on
-demoplotX = plot((1:4223)*dt,demo(:,1), 'LineWidth', 4)
+demoplot = plot((1:4223)*dt,demo(:,1), 'LineWidth', 1.5)
 hold off
 grid on
 leg = legend('\boldmath$x_e$','\boldmath${x}_{e,demo}$','location','eastoutside', 'Interpreter', 'Latex')
@@ -86,34 +86,29 @@ leg.FontSize = 10
 xlabel('Time [s]')
 ylabel('X [m]')
 xlim([0 4222*dt])
-demoplotX.Color(4) = 0.30
-disp(demoplotX.Color)
+demo
 
 % Tile 2
 nexttile
 plot((1:4222)*dt,traj(2,:), 'LineWidth', 1.5)
 hold on
-demoplotY = plot((1:4223)*dt,demo(:,2), 'LineWidth', 4)
+plot((1:4223)*dt,demo(:,2), 'LineWidth', 1.5)
 hold off
 grid on
 xlabel('Time [s]')
 ylabel('Y [m]')
 xlim([0 4222*dt])
-demoplotY.Color(4) = 0.30
-
 
 % Tile 3
 nexttile
 plot((1:4222)*dt,traj(3,:), 'LineWidth', 1.5)
 hold on
-demoplotZ = plot((1:4223)*dt,demo(:,3), 'LineWidth', 4)
+plot((1:4223)*dt,demo(:,3), 'LineWidth', 1.5)
 hold off
 grid on
 xlabel('Time [s]')
 ylabel('Z [m]')
 xlim([0 4222*dt])
-demoplotZ.Color(4) = 0.30
-
 
 %% Show joint velocities
 dt = 1/500;
