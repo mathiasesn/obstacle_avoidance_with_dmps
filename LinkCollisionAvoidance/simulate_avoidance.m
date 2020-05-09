@@ -14,7 +14,7 @@ removeBody(robot,'panda_link8');
 
 %% Setup: Insert obstacle
 % Add obstacle
-obstaclePosition = [.575 .30 .45]';
+obstaclePosition = [.25 .25 .45]';%[.575 .30 .45]';
 obstacle = collisionSphere(0.1);
 obstacle.Pose = trvec2tform(obstaclePosition');
 
@@ -38,7 +38,7 @@ qdArray = [];
 traj = [];
 
 xe = startPose(1:3,4)';
-
+robotgif = figure
 for i = 1:size(demo,1)-1
     %dxe = (demo(i+1, 1:6) - demo(i, 1:6)) ./ dt; % Directly from DMP
     
@@ -46,7 +46,8 @@ for i = 1:size(demo,1)-1
     
     %dxe = [dxe 0 0 0]';
     qd = avoidanceIK(robot, config, obstaclePosition, dxe');
-    %qdArray = [qdArray qd];
+    qd = ClampAbsMax(qd, 1);
+    qdArray = [qdArray qd];
     if norm(qd) > 10
         disp(i)
         disp(norm(qd))
@@ -60,9 +61,15 @@ for i = 1:size(demo,1)-1
     traj = [traj xe'];
     
     if mod(i, 10) == 0
-        %show(robot, config);
-        %drawnow
+        show(robot, config);
+        hold on
+        show(obstacle)
+        hold off
+        drawnow
+        view(84,22)
    %    waitfor(r);
+        % For generation of GIF
+        frame = getframe(1);
     end
     if mod(i,100) == 0
         waitbar(i/(size(demo,1)-1),f,'Computing...');
@@ -78,48 +85,46 @@ tiledlayout(3,1);
 nexttile
 plot((1:4222)*dt,traj(1,:), 'LineWidth', 1.5)
 hold on
-demoplotX = plot((1:4223)*dt,demo(:,1), 'LineWidth', 4)
+demoplotX = plot((1:4223)*dt,demo(:,1), 'LineWidth', 4);
 hold off
 grid on
-leg = legend('\boldmath$x_e$','\boldmath${x}_{e,demo}$','location','eastoutside', 'Interpreter', 'Latex')
-leg.FontSize = 10
+leg = legend('\boldmath$x_e$','\boldmath${x}_{e,demo}$','location','eastoutside', 'Interpreter', 'Latex');
+leg.FontSize = 10;
 xlabel('Time [s]')
 ylabel('X [m]')
 xlim([0 4222*dt])
-demoplotX.Color(4) = 0.30
-disp(demoplotX.Color)
-
+demoplotX.Color(4) = 0.30;
 % Tile 2
 nexttile
 plot((1:4222)*dt,traj(2,:), 'LineWidth', 1.5)
 hold on
-demoplotY = plot((1:4223)*dt,demo(:,2), 'LineWidth', 4)
+demoplotY = plot((1:4223)*dt,demo(:,2), 'LineWidth', 4);
 hold off
 grid on
 xlabel('Time [s]')
 ylabel('Y [m]')
 xlim([0 4222*dt])
-demoplotY.Color(4) = 0.30
+demoplotY.Color(4) = 0.30;
 
 
 % Tile 3
 nexttile
 plot((1:4222)*dt,traj(3,:), 'LineWidth', 1.5)
 hold on
-demoplotZ = plot((1:4223)*dt,demo(:,3), 'LineWidth', 4)
+demoplotZ = plot((1:4223)*dt,demo(:,3), 'LineWidth', 4);
 hold off
 grid on
 xlabel('Time [s]')
 ylabel('Z [m]')
 xlim([0 4222*dt])
-demoplotZ.Color(4) = 0.30
+demoplotZ.Color(4) = 0.30;
 
 
 %% Show joint velocities
 dt = 1/500;
 
 figure(1)
-plot((1:4222)*dt, qdArray(3,:), 'LineWidth', 2)
+plot((1:4222)*dt, qdArray(3,:), 'LineWidth', 1)
 grid on
 xlim([0 4222*dt])
 ylabel('$\dot{q}$ [rad/s]','Interpreter','Latex')
