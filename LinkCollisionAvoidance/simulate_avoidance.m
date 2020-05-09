@@ -38,7 +38,10 @@ qdArray = [];
 traj = [];
 
 xe = startPose(1:3,4)';
+
 robotgif = figure
+filename = 'robotgamma1.gif';
+first = 1;
 for i = 1:size(demo,1)-1
     %dxe = (demo(i+1, 1:6) - demo(i, 1:6)) ./ dt; % Directly from DMP
     
@@ -69,7 +72,15 @@ for i = 1:size(demo,1)-1
         view(84,22)
    %    waitfor(r);
         % For generation of GIF
-        frame = getframe(1);
+        frame = getframe(robotgif);
+        im = frame2im(frame);
+        [imind,cm] = rgb2ind(im,256);
+        if first == 1;
+            imwrite(imind,cm,filename,'gif', 'Loopcount',inf);
+            first = 0;
+        else
+            imwrite(imind,cm,filename,'gif','WriteMode','append');
+        end
     end
     if mod(i,100) == 0
         waitbar(i/(size(demo,1)-1),f,'Computing...');
