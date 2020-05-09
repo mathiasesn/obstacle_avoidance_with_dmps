@@ -5,6 +5,15 @@
 clc;clear;format compact;
 
 demo = importdata('demo.dat');
+
+%% GIF settings
+creategif = 1;
+if creategif == 1
+    robotgif = figure
+    filename = 'devrobot.gif';
+    first = 1;
+end
+
 %% Setup: Remove redundant bodies
 robot = loadrobot("frankaEmikaPanda");
 removeBody(robot,'panda_rightfinger');
@@ -38,10 +47,6 @@ qdArray = [];
 traj = [];
 
 xe = startPose(1:3,4)';
-
-robotgif = figure
-filename = 'robotgamma1.gif';
-first = 1;
 for i = 1:size(demo,1)-1
     %dxe = (demo(i+1, 1:6) - demo(i, 1:6)) ./ dt; % Directly from DMP
     
@@ -63,7 +68,7 @@ for i = 1:size(demo,1)-1
     xe = tform2trvec(xe);
     traj = [traj xe'];
     
-    if mod(i, 10) == 0
+    if mod(i, 10) == 0 && creategif == 1
         show(robot, config);
         hold on
         show(obstacle)
