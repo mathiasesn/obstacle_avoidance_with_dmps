@@ -14,7 +14,7 @@ import matplotlib.animation as animation
 
 # MAIN FUNCTION 
 if __name__ == '__main__':
-    # # Load a demonstration file containing robot positions.
+    # Load a demonstration file containing robot positions.
     # demo = np.loadtxt("demo.dat", delimiter=" ", skiprows=1)
     
     # tau = 0.002 * len(demo)
@@ -22,8 +22,8 @@ if __name__ == '__main__':
     # demo_p = demo[:, 0:3]
 
     # # Defining obstacle
-    # sphere = Obstacle([0.575, 0.30, 0.45])
-    
+    # #sphere = Obstacle([0.575, 0.30, 0.45])
+    # sphere = Obstacle(demo_p[700])
 
     # N = 30  # TODO: Try changing the number of basis functions to see how it affects the output.
     # dmp = PositionDMP(n_bfs=N, alpha=48.0, obstacles=sphere)
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     # # Generate an output trajectory from the trained DMP
     # dmp_p, dmp_dp, dmp_ddp = dmp.rollout(t, tau)
 
-    # 2D plot the DMP against the original demonstration
+    # # 2D plot the DMP against the original demonstration
     # fig1, axs = plt.subplots(3, 1, sharex=True)
     # axs[0].plot(t, demo_p[:, 0], label='Demonstration')
     # axs[0].plot(t, dmp_p[:, 0], label='DMP')
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     # axs[2].set_ylabel('Z (m)')
     # axs[2].legend()
 
-    # 3D plot the DMP against the original demonstration       
+    # # 3D plot the DMP against the original demonstration       
     # fig2 = plt.figure(2)
     # ax = plt.axes(projection='3d')
     # ax.plot3D(demo_p[:, 0], demo_p[:, 1], demo_p[:, 2], label='Demonstration')
@@ -78,9 +78,9 @@ if __name__ == '__main__':
     sphere = Obstacle(demo_p[int(len(demo_p)/4),:])
    # obs_traj = np.squeeze(self.obstacles.create_trajectory([0.65,0.20,0.45], len(t)))
 
-    obs_traj = demo_p[900:int(len(demo_p)/4),:] 
+    obs_traj = demo_p[500:int(len(demo_p)/4),:] 
     obs_traj = obs_traj[::-1] # reversing path of DMP
-    start_obs_mov = 800 # index of DMP when to start moving the obstacle
+    start_obs_mov = 450 # index of DMP when to start moving the obstacle
 
 
     N = 30  
