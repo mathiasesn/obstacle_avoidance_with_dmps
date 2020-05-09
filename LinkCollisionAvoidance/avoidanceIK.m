@@ -14,12 +14,13 @@ function qd = avoidanceIK(robot, config, obstaclePosition, dxe)
 
     % Find Je
     Je  = jacobians(:,:,7);
-       
+    
+   
     % Compute qd
-    if sum(norm(( eye(7) - pinv(Je)*Je ) * pinv( J0 * ( eye(7) - pinv(Je)*Je ) ))) > 1e6 % Avoid large jumps
-        disp('Without null-space movement')
-        qd = pinv(Je)*dxe;
-    else
-        qd = pinv(Je)*dxe + ( eye(7) - pinv(Je)*Je ) * pinv( J0 * ( eye(7) - pinv(Je)*Je ) ) * ( dx0 - J0*pinv(Je)*dxe );
-    end
+    %if sum(norm(( eye(7) - pinv(Je)*Je ) * pinv( J0 * ( eye(7) - pinv(Je)*Je ) ))) > 1e6 % Avoid large jumps
+    %    disp('Without null-space movement')
+    %    qd = pinv(Je)*dxe;
+    %else
+    qd = pinv(Je)*dxe + ( eye(7) - pinv(Je, 1e-10)*Je ) * pinv( J0 * ( eye(7) - pinv(Je)*Je ), 1e-10 ) * ( dx0 - J0*pinv(Je,1e-10)*dxe );
+    %end
 end

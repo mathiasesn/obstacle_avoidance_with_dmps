@@ -19,7 +19,14 @@ if __name__ == '__main__':
     N = 30  # TODO: Try changing the number of basis functions to see how it affects the output.
     dmp = PositionDMP(n_bfs=N, alpha=48.0)
     dmp.train(demo_p, t, tau)
-
+    print(dmp.Dp)
+    print(dmp.w.shape)
+   # print("---------- DMP Centers ----------")
+   # print(dmp.c)
+   # print("---------- DMP Width ----------")
+   # print(dmp.h)
+   # print("---------- DMP Weights ----------")
+   # print(dmp.w)
     # TODO: Try setting a different starting point for the dmp:
     # dmp.p0 = [x, y, z]
 

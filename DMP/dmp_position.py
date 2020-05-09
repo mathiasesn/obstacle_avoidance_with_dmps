@@ -114,6 +114,9 @@ class PositionDMP():
         A = np.stack(features(xj) for xj in x)
         f = np.stack(forcing(j) for j in range(len(ts)))
 
+        print(A.shape)
+        print(f.shape)
+
         # Least squares solution for Aw = f (for each column of f)
         self.w = np.linalg.lstsq(A, f, rcond=None)[0].T
 
