@@ -8,7 +8,7 @@ function qd = avoidanceIK(robot, config, obstaclePosition, dxe)
     J0 = jacobians(:,:,x0index);                 % Get corresponding Jacobian
     
     % Compute dx0 using potential field
-    gammaL = 1;
+    gammaL = 0;%100; % 1
     dx0 = -gammaL * nablaU(x0, obstaclePosition);
     dx0 = [dx0' 0 0 0]';
 

@@ -7,7 +7,7 @@ clc;clear;format compact;
 demo = importdata('demo.dat');
 
 %% GIF settings
-creategif = 1;
+creategif = 1;  % Set this to 0 if GIF should not be created.
 if creategif == 1
     robotgif = figure
     filename = 'devrobot.gif';
@@ -46,6 +46,30 @@ preqd = zeros(7,1);
 qdArray = [];
 traj = [];
 
+%   show(robot, config);
+%   hold on
+%   show(obstacle, [0,0,0])
+%   hold off
+%   view(84,22)
+%   zoom(2)
+%   xlim([-0.3 0.8])
+%  q = [];
+%  for i = 1:7
+%      q = [q config(i).JointPosition];
+%  end
+%  q
+
+q = [2.8973   -0.9636   -2.5422   -1.4848    2.5051    0.8937   -0.5611]
+for i = 1:7
+    config(i).JointPosition = q(i);
+end
+% initial config far away
+% q1 = [-0.5786    1.3830    1.2284   -1.4300    1.8155    1.2657 -0.7811]
+% initial config very close to obstacle
+% q2 = [1.0888    1.7628   -1.6201   -1.4280   -1.3737    1.5915    0.3325]
+% medium
+% q3 = [2.8973   -0.9636   -2.5422   -1.4848    2.5051    0.8937   -0.5611]
+
 xe = startPose(1:3,4)';
 for i = 1:size(demo,1)-1
     %dxe = (demo(i+1, 1:6) - demo(i, 1:6)) ./ dt; % Directly from DMP
@@ -75,7 +99,9 @@ for i = 1:size(demo,1)-1
         hold off
         drawnow
         view(84,22)
-   %    waitfor(r);
+        zoom(2)                 % TEST
+        xlim([-0.3 0.8])        % TEST
+        zlim([-0.7 0.7])
         % For generation of GIF
         frame = getframe(robotgif);
         im = frame2im(frame);

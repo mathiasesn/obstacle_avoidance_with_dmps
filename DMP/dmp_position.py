@@ -77,6 +77,13 @@ class PositionDMP():
         self.dp = np.zeros(3)
         self.ddp = np.zeros(3)
 
+    def fit_repulsion(self, positions, ts, tau):
+        p = positions
+        # Sanity-check input
+        if len(p) != len(ts):
+            raise RuntimeError("len(p) != len(ts)")
+        
+
     def train(self, positions, ts, tau):
         p = positions
 
