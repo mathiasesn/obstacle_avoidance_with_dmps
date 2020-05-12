@@ -59,9 +59,9 @@ def Ct_coupling(p, dp, sphere : Obstacle):
     R   = R_from_axis_angle(r, np.pi/2)
     Rdp = np.matmul(R, dp)
 
-    gamma1 = 1e6
+    gamma1 = 3e6
     gamma2 = 0
-    gamma3 = 1.25e4
+    gamma3 = 2e4
 
     Ct = gamma1 * Rdp * phi1 + gamma2 * Rdp * phi2 + gamma3 * Rdp * phi3
     return Ct

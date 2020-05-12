@@ -5,6 +5,7 @@ import numpy as np
 from canonical_system import CanonicalSystem
 from obstacle import Obstacle
 from repulsive import Ct, Ct_coupling
+from attractive import Att
 
 class PositionDMP():
     def __init__(self, n_bfs=10, alpha=48.0, beta=None, cs_alpha=None, cs=None):
@@ -31,7 +32,7 @@ class PositionDMP():
 
         self.reset()
 
-    def step(self, x, dt, tau):
+    def step(self, x, dt, tau, x_target):
         def fp(xj):
             psi = np.exp(-self.h * (xj - self.c)**2)
             return self.Dp.dot(self.w.dot(psi) / psi.sum() * xj)
@@ -41,9 +42,12 @@ class PositionDMP():
         # values of the following variables:
         # self.alpha, self.beta, self.gp, self.p, self.dp, tau, x
         #sphere  = Obstacle([0.575, 0.30, 0.45])
-        sphere = Obstacle([0., 0.25, 0.80])
+        #sphere = Obstacle([0., 0.25, 0.80])
+        sphere  = Obstacle(self.demo_p[760])
 
-        self.ddp = (self.alpha*( self.beta * (self.gp - self.p) - tau*self.dp ) + fp(x) + Ct(self.p, self.dp, sphere) )/(tau*tau)
+       # x_target = self.p + (self.dp + self.alpha*( self.beta * (self.gp - self.p) - tau*self.dp ) / (tau * tau) * dt)*dt # target used for Att
+
+        self.ddp = (self.alpha*( self.beta * (self.gp - self.p) - tau*self.dp ) + fp(x) + Ct_coupling(self.p, self.dp, sphere) + Att(x_target, self.p, sphere.pos) )/(tau*tau)
 
         # Integrate acceleration to obtain velocity
         self.dp += self.ddp * dt
@@ -68,7 +72,7 @@ class PositionDMP():
         ddp = np.empty((n_steps, 3))
 
         for i in range(n_steps):
-            p[i], dp[i], ddp[i] = self.step(x[i], dt[i], tau[i])
+            p[i], dp[i], ddp[i] = self.step(x[i], dt[i], tau[i], self.demo_p[i]) # added target
 
         return p, dp, ddp
 
@@ -85,6 +89,7 @@ class PositionDMP():
         
 
     def train(self, positions, ts, tau):
+        self.demo_p = positions # added demo_p
         p = positions
 
         # Sanity-check input
