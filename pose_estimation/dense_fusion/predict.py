@@ -13,6 +13,7 @@ import cv2
 import yaml
 import time
 import torch
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 from PIL import Image
 from numpy import ma
@@ -27,20 +28,72 @@ from pose_estimation.dense_fusion.lib.transformations import euler_matrix, quate
 from pose_estimation.dense_fusion.lib.knn.__init__ import KNearestNeighbor
 
 
-def visualize(pcds, img_path, depth_path, win_name='RGBD with points'):
-    color_raw = o3d.io.read_image(img_path)
-    depth_raw = o3d.io.read_image(depth_path)
-    # rgbd_img = o3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw, depth_scale=1.0, convert_rgb_to_intensity=False)
-    rgbd_img = o3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw, convert_rgb_to_intensity=False)
+parser = argparse.ArgumentParser(description='Predict with DenseFusion')
+parser.add_argument('--item', type=str, default='13', help='item to predict (default: 01 for ape)')
+parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='path/to/dataset/root')
+parser.add_argument('--posenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_model_9_0.01310166542980859.pth', help='path/to/posenet/model')
+parser.add_argument('--refinenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_refine_model_29_0.006821325639856025.pth', help='path/to/refinenet/model')
+parser.add_argument('--std', type=float, default=0.0, help='standard devitaion of the noise added to depth and image')
+args = parser.parse_args()
 
-    cam_mat = o3d.camera.PinholeCameraIntrinsic()
-    cam_mat.set_intrinsics(640, 480, 572.41140, 573.57043, 325.26110, 242.04899)
 
-    pcd_rgbd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd_img, cam_mat)
+class Visualize:
+    def __init__(self, pcds, img_path, depth_path, win_name):
+        self.pcds = pcds
+        self.img_path = img_path
+        self.depth_path = depth_path
+        self.win_name = win_name
+        self.index = 0
+        self.get_rgbd_input()
 
-    pcds.append(pcd_rgbd)
+    def get_rgbd_input(self):
+        color_raw = o3d.io.read_image(self.img_path)
+        depth_raw = o3d.io.read_image(self.depth_path)
+        rgbd_img = o3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw, convert_rgb_to_intensity=False)
+        cam_mat = o3d.camera.PinholeCameraIntrinsic()
+        cam_mat.set_intrinsics(640, 480, 572.41140, 573.57043, 325.26110, 242.04899)
+        pcd_rgbd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd_img, cam_mat)
+        self.pcds.append(pcd_rgbd)
 
-    o3d.visualization.draw_geometries(pcds, window_name=win_name)
+    def custom_draw_geometry_with_key_callback(self):
+        self.index = 0
+
+        def change_background_to_black(vis):
+            opt = vis.get_render_option()
+            opt.background_color = np.asarray([0, 0, 0])
+            return False
+
+        def load_render_option(vis):
+            vis.get_render_option().load_from_json("pose_estimation/dense_fusion/demonstration/renderoption.json")
+            return False
+
+        def capture_depth(vis):
+            depth = vis.capture_depth_float_buffer()
+            plt.imshow(np.asarray(depth))
+            plt.show()
+            return False
+
+        def capture_image(vis):
+            image = vis.capture_screen_float_buffer()
+            plt.imsave(f'pose_estimation/dense_fusion/demonstration/{args.item}/{self.index:05d}.png', np.asarray(image), dpi=1)
+            self.index += 1
+            return False
+        
+        def rotate_view(vis):
+            image = vis.capture_screen_float_buffer()
+            plt.imsave(f'pose_estimation/dense_fusion/demonstration/{args.item}/{self.index:05d}.png', np.asarray(image), dpi=1)
+            self.index += 1
+            ctr = vis.get_view_control()
+            ctr.rotate(20.0, 0.0)
+            return False
+
+        key_to_callback = {}
+        key_to_callback[ord("K")] = change_background_to_black
+        key_to_callback[ord("R")] = load_render_option
+        key_to_callback[ord(",")] = capture_depth
+        key_to_callback[ord(".")] = capture_image
+        key_to_callback[ord("S")] = rotate_view
+        o3d.visualization.draw_geometries_with_key_callbacks(self.pcds, key_to_callback)    
 
 
 class Dataset(Dataset):
@@ -228,7 +281,7 @@ class Dataset(Dataset):
     def get_rgbd_path(self, index):
         return self.imgs[index], self.depths[index]
 
-def main(args):
+def main():
     num_objects = 13
     objlist = [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]
     num_points = 500
@@ -305,29 +358,29 @@ def main(args):
         
         pred = np.append(r, t)
 
-        # // show pose
-        pcd_img_path, pcd_depth_path = dataset.get_rgbd_path(i)
-        pcd_model_points = model_points[0].cpu().detach().numpy()
-        pcd_r = quaternion_matrix(r)
-        pcd_r = pcd_r[:3, :3]
-        pcd_pose = np.dot(pcd_model_points, pcd_r.T) + t
-        pcd_target = o3d.geometry.PointCloud()
-        pcd_target.points = o3d.utility.Vector3dVector(pcd_pose)
-        pcd_target.paint_uniform_color([0, 0, 1])
+        # # // show pose
+        # pcd_img_path, pcd_depth_path = dataset.get_rgbd_path(i)
+        # pcd_model_points = model_points[0].cpu().detach().numpy()
+        # pcd_r = quaternion_matrix(r)
+        # pcd_r = pcd_r[:3, :3]
+        # pcd_pose = np.dot(pcd_model_points, pcd_r.T) + t
+        # pcd_target = o3d.geometry.PointCloud()
+        # pcd_target.points = o3d.utility.Vector3dVector(pcd_pose)
+        # pcd_target.paint_uniform_color([0, 0, 1])
 
-        gt = target[0].cpu().detach().numpy()
-        pcd_gt = o3d.geometry.PointCloud()
-        pcd_gt.points = o3d.utility.Vector3dVector(gt)
-        pcd_gt.paint_uniform_color([1, 0, 0])
+        # gt = target[0].cpu().detach().numpy()
+        # pcd_gt = o3d.geometry.PointCloud()
+        # pcd_gt.points = o3d.utility.Vector3dVector(gt)
+        # pcd_gt.paint_uniform_color([1, 0, 0])
 
-        pcds = [pcd_target, pcd_gt]
-        visualize(pcds, pcd_img_path, pcd_depth_path, 'Pose from PoseNet')
+        # pcds = [pcd_target, pcd_gt]
+        # visualize(pcds, pcd_img_path, pcd_depth_path, 'Pose from PoseNet')
 
-        bar.write(f'Pose from PoseNet\n Rotation\n{pcd_r}\n translation\n{t}')
+        # bar.write(f'Pose from PoseNet\n Rotation\n{pcd_r}\n translation\n{t}')
         
-        error = np.mean(np.linalg.norm(pcd_pose - gt, axis=1))
-        bar.write(f'Add score --> {error}')
-        # //
+        # error = np.mean(np.linalg.norm(pcd_pose - gt, axis=1))
+        # bar.write(f'Add score --> {error}')
+        # # //
 
         for j in range(0, iteration):
             T = t.astype(np.float32)
@@ -375,30 +428,30 @@ def main(args):
             r = final_r
             t = final_t
 
-            # // show pose
-            pcd_img_path, pcd_depth_path = dataset.get_rgbd_path(i)
+            # # // show pose
+            # pcd_img_path, pcd_depth_path = dataset.get_rgbd_path(i)
 
-            pcd_model_points = model_points[0].cpu().detach().numpy()
-            pcd_r = quaternion_matrix(r)
-            pcd_r = pcd_r[:3, :3]
-            pcd_pose = np.dot(pcd_model_points, pcd_r.T) + t
-            bar.write(f'Pose from PoseRefineNet iteration {j}\n Rotation\n{pcd_r}\n translation\n{t}')
+            # pcd_model_points = model_points[0].cpu().detach().numpy()
+            # pcd_r = quaternion_matrix(r)
+            # pcd_r = pcd_r[:3, :3]
+            # pcd_pose = np.dot(pcd_model_points, pcd_r.T) + t
+            # bar.write(f'Pose from PoseRefineNet iteration {j}\n Rotation\n{pcd_r}\n translation\n{t}')
 
-            pcd_target = o3d.geometry.PointCloud()
-            pcd_target.points = o3d.utility.Vector3dVector(pcd_pose)
-            pcd_target.paint_uniform_color([0, 0, 1])
+            # pcd_target = o3d.geometry.PointCloud()
+            # pcd_target.points = o3d.utility.Vector3dVector(pcd_pose)
+            # pcd_target.paint_uniform_color([0, 0, 1])
 
-            gt = target[0].cpu().detach().numpy()
-            pcd_gt = o3d.geometry.PointCloud()
-            pcd_gt.points = o3d.utility.Vector3dVector(gt)
-            pcd_gt.paint_uniform_color([1, 0, 0])
+            # gt = target[0].cpu().detach().numpy()
+            # pcd_gt = o3d.geometry.PointCloud()
+            # pcd_gt.points = o3d.utility.Vector3dVector(gt)
+            # pcd_gt.paint_uniform_color([1, 0, 0])
 
-            pcds = [pcd_target, pcd_gt]
-            visualize(pcds, pcd_img_path, pcd_depth_path, f'Pose from PoseRefineNet iteration {j}')
+            # pcds = [pcd_target, pcd_gt]
+            # visualize(pcds, pcd_img_path, pcd_depth_path, f'Pose from PoseRefineNet iteration {j}')
             
-            error = np.mean(np.linalg.norm(pcd_pose - gt, axis=1))
-            bar.write(f'Add score --> {error}')
-            # //
+            # error = np.mean(np.linalg.norm(pcd_pose - gt, axis=1))
+            # bar.write(f'Add score --> {error}')
+            # # //
         
         model_points = model_points[0].cpu().detach().numpy()
         r = quaternion_matrix(r)
@@ -421,7 +474,9 @@ def main(args):
         target_pcd.paint_uniform_color([1, 0, 0])
 
         pcds = [est_pcd, target_pcd]
-        visualize(pcds, pcd_img_path, pcd_depth_path, f'Final pose (blue) and ground truth (red)')
+        vis = Visualize(pcds, pcd_img_path, pcd_depth_path, f'Final pose (blue) and ground truth (red)')
+        vis.custom_draw_geometry_with_key_callback()
+        # visualize(pcds, pcd_img_path, pcd_depth_path, f'Final pose (blue) and ground truth (red)')
         # //
 
         if idx[0].item() in sym_list:
@@ -475,12 +530,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Predict with DenseFusion')
-    parser.add_argument('--item', type=str, default='13', help='item to predict (default: 01 for ape)')
-    parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='path/to/dataset/root')
-    parser.add_argument('--posenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_model_9_0.01310166542980859.pth', help='path/to/posenet/model')
-    parser.add_argument('--refinenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_refine_model_29_0.006821325639856025.pth', help='path/to/refinenet/model')
-    parser.add_argument('--std', type=float, default=0.0, help='standard devitaion of the noise added to depth and image')
-    args = parser.parse_args()
-
-    main(args)
+    main()

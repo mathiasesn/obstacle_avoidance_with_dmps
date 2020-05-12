@@ -65,7 +65,8 @@ def main(opt):
         diameter.append(meta[obj]['diameter'] / 1000.0 * 0.1)
     print(diameter)
 
-    sigmas = [0.0, 0.001, 0.005, 0.01, 0.02, 0.03]
+    # sigmas = [0.0, 0.001, 0.005, 0.01, 0.02, 0.03]
+    sigmas = [0.0]
 
     for sigma in sigmas:
         print(f'Evaluation with standard deviation of {sigma}')
