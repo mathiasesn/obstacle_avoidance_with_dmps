@@ -16,7 +16,7 @@ class dataset_global_align():
 
 
     def __init__(self, num_points, root, show=False, sigma=0.0):
-        self.list_of_objs = [1]#self.list_of_objs = [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]
+        self.list_of_objs = [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]
         self.num_points = num_points
         self.root = root
         self.show = show
@@ -31,13 +31,19 @@ class dataset_global_align():
         self.pt = {}
 
         item_count = 0
+        
         for item in self.list_of_objs:
             input_file = open(f"{self.root}/data/{'%02d' % item}/test.txt")
-            
+            bob = 0
             while True:
                 item_count += 1
+                bob += 1
                 input_line = input_file.readline()
 
+                # TEMPT TEST DELETE AFTER
+                # if bob > 2:
+                #     break
+                
                 if not input_line:
                     break
 

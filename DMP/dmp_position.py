@@ -55,7 +55,7 @@ class PositionDMP():
         #sphere = Obstacle([0., 0.25, 0.80])
         ###### NEW ######
 
-        
+
         self.ddp = (self.alpha*( self.beta * (self.gp - self.p) - tau*self.dp ) + fp(x) + Ct_coupling(self.p, self.dp, self.obstacles) )/(tau*tau)
 
         # Integrate acceleration to obtain velocity
@@ -66,7 +66,7 @@ class PositionDMP():
 
         return self.p, self.dp, self.ddp
 
-    def rollout_w_obstacle(self, ts, tau, obs_traj, start_obs_mov):
+    def rollout_moving_obstacle(self, ts, tau, obs_traj, start_obs_mov):
         self.reset()
         if np.isscalar(tau):
             tau = np.full_like(ts, tau)
@@ -87,6 +87,7 @@ class PositionDMP():
             # Moving obstacle
             # First moving obstacle at index DMP
             if i > start_obs_mov:
+                print(self.obstacles.pos)
                 stop_mov = self.obstacles.move_sphere(obs_traj)
                 if not stop_mov:
                     obs_p.append((self.obstacles.x, self.obstacles.y, self.obstacles.z))
@@ -95,7 +96,7 @@ class PositionDMP():
 
     def move_and_plot_dmp_obs(self, demo_p, ts, tau, obs_traj, start_obs_mov):
         n_steps = len(ts)
-        dmp_p, obs_p = self.rollout_w_obstacle(ts, tau, obs_traj, start_obs_mov)
+        dmp_p, obs_p = self.rollout_moving_obstacle(ts, tau, obs_traj, start_obs_mov)
 
         def animate(i, plot_dmp, dmp_points, plot_obs, obs_points, update_bar):
             # Updating progress bar
