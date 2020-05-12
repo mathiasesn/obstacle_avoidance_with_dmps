@@ -4,6 +4,7 @@ This project explores the abillity of performing obstacle avoidance with the use
 
 - Dynamic movement primitives
 - Obstacle avoidance
+- Link collision avoidance
 - Pose estimation of object
 
 ## Litterature
