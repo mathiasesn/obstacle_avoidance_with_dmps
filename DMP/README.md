@@ -1,4 +1,5 @@
-All the gifs shown below have a demostrated position for the end-effector marked with <div class="text-blue mb-2">
+All the gifs shown below have a demostrated position for the end-effector marked with 
+<div class="text-blue mb-2">
   blue
 </div>
 ### Online obstacle avoidance with original parameters
