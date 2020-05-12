@@ -1,7 +1,6 @@
 All the gifs shown below have a demostrated position for the end-effector marked with 
-<div class="text-blue mb-2">
-  blue
-</div>
+Some Markdown text with <span style="color:blue">some *blue* text</span>.
+
 ### Online obstacle avoidance with original parameters
 ![](mov_obs_original_param/3D_ori_param.gif)
 ![](mov_obs_original_param/2D_ori_param.gif)
