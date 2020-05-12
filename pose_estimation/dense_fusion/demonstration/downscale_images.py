@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 
 parser = argparse.ArgumentParser(description='Downscale images in folder')
-parser.add_argument('--path', type=str, default='pose_estimation/dense_fusion/demonstration/13', help='path/to/folder')
+parser.add_argument('--path', type=str, default='pose_estimation/dense_fusion/demonstration/data', help='path/to/folder')
 parser.add_argument('--type', type=str, default='png', help='image type (default: png)')
 args = parser.parse_args()
 

@@ -29,7 +29,7 @@ from pose_estimation.dense_fusion.lib.knn.__init__ import KNearestNeighbor
 
 
 parser = argparse.ArgumentParser(description='Predict with DenseFusion')
-parser.add_argument('--item', type=str, default='13', help='item to predict (default: 01 for ape)')
+parser.add_argument('--item', type=str, default='01', help='item to predict (default: 01 for ape)')
 parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='path/to/dataset/root')
 parser.add_argument('--posenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_model_9_0.01310166542980859.pth', help='path/to/posenet/model')
 parser.add_argument('--refinenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_refine_model_29_0.006821325639856025.pth', help='path/to/refinenet/model')
@@ -38,11 +38,10 @@ args = parser.parse_args()
 
 
 class Visualize:
-    def __init__(self, pcds, img_path, depth_path, win_name):
+    def __init__(self, pcds, img_path, depth_path):
         self.pcds = pcds
         self.img_path = img_path
         self.depth_path = depth_path
-        self.win_name = win_name
         self.index = 0
         self.get_rgbd_input()
 
@@ -55,9 +54,7 @@ class Visualize:
         pcd_rgbd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd_img, cam_mat)
         self.pcds.append(pcd_rgbd)
 
-    def custom_draw_geometry_with_key_callback(self):
-        self.index = 0
-
+    def custom_draw_geometry_with_key_callback(self, win_name):
         def change_background_to_black(vis):
             opt = vis.get_render_option()
             opt.background_color = np.asarray([0, 0, 0])
@@ -75,16 +72,16 @@ class Visualize:
 
         def capture_image(vis):
             image = vis.capture_screen_float_buffer()
-            plt.imsave(f'pose_estimation/dense_fusion/demonstration/{args.item}/{self.index:05d}.png', np.asarray(image), dpi=1)
+            plt.imsave(f'pose_estimation/dense_fusion/demonstration/data/{self.index:04d}.png', np.asarray(image), dpi=1)
             self.index += 1
             return False
         
         def rotate_view(vis):
             image = vis.capture_screen_float_buffer()
-            plt.imsave(f'pose_estimation/dense_fusion/demonstration/{args.item}/{self.index:05d}.png', np.asarray(image), dpi=1)
+            plt.imsave(f'pose_estimation/dense_fusion/demonstration/data/{self.index:04d}.png', np.asarray(image), dpi=1)
             self.index += 1
             ctr = vis.get_view_control()
-            ctr.rotate(20.0, 0.0)
+            ctr.rotate(10.0, 5.0)
             return False
 
         key_to_callback = {}
@@ -93,7 +90,21 @@ class Visualize:
         key_to_callback[ord(",")] = capture_depth
         key_to_callback[ord(".")] = capture_image
         key_to_callback[ord("S")] = rotate_view
-        o3d.visualization.draw_geometries_with_key_callbacks(self.pcds, key_to_callback)    
+        o3d.visualization.draw_geometries_with_key_callbacks(self.pcds, key_to_callback, window_name=win_name)
+    
+    def custom_draw_geometry_with_rotation(self, win_name):
+        def rotate_view(vis):
+            image = vis.capture_screen_float_buffer()
+            plt.imsave(f'pose_estimation/dense_fusion/demonstration/data/{self.index:04d}.png', np.asarray(image), dpi=1)
+            self.index += 1
+            ctr = vis.get_view_control()
+            ctr.rotate(10.0, 0.0)
+            return False
+
+        o3d.visualization.draw_geometries_with_animation_callback(self.pcds, rotate_view)
+
+    def set_pcds(self, pcds):
+        self.pcds = pcds  
 
 
 class Dataset(Dataset):
@@ -145,8 +156,8 @@ class Dataset(Dataset):
 
         self.norm = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         self.border_list = [-1, 40, 80, 120, 160, 200, 240, 280, 320, 360, 400, 440, 480, 520, 560, 600, 640, 680]
-        self.num_pt_mesh_large = 500
-        self.num_pt_mesh_small = 500
+        self.num_pt_mesh_large = num_points
+        self.num_pt_mesh_small = num_points
         self.symmetry_obj_idx = [7, 8]
 
     def __getitem__(self, index):
@@ -315,7 +326,6 @@ def main():
     for obj in objlist:
         obj_d = meta[obj]['diameter'] / 1000.0 * 0.1
         diameter.append(obj_d)
-        print(f'Object {obj} has diameter {obj_d:.3f}')
 
     success_count = [0 for i in range(num_objects)]
     num_count = [0 for i in range(num_objects)]
@@ -374,7 +384,8 @@ def main():
         # pcd_gt.paint_uniform_color([1, 0, 0])
 
         # pcds = [pcd_target, pcd_gt]
-        # visualize(pcds, pcd_img_path, pcd_depth_path, 'Pose from PoseNet')
+        # vis = Visualize(pcds, pcd_img_path, pcd_depth_path)
+        # vis.custom_draw_geometry_with_key_callback('Pose from PoseNet')
 
         # bar.write(f'Pose from PoseNet\n Rotation\n{pcd_r}\n translation\n{t}')
         
@@ -447,7 +458,8 @@ def main():
             # pcd_gt.paint_uniform_color([1, 0, 0])
 
             # pcds = [pcd_target, pcd_gt]
-            # visualize(pcds, pcd_img_path, pcd_depth_path, f'Pose from PoseRefineNet iteration {j}')
+            # vis.set_pcds(pcds)
+            # vis.custom_draw_geometry_with_key_callback(f'Pose after {j} refinement')
             
             # error = np.mean(np.linalg.norm(pcd_pose - gt, axis=1))
             # bar.write(f'Add score --> {error}')
@@ -473,10 +485,12 @@ def main():
         target_pcd.points = o3d.utility.Vector3dVector(target)
         target_pcd.paint_uniform_color([1, 0, 0])
 
-        pcds = [est_pcd, target_pcd]
-        vis = Visualize(pcds, pcd_img_path, pcd_depth_path, f'Final pose (blue) and ground truth (red)')
-        vis.custom_draw_geometry_with_key_callback()
-        # visualize(pcds, pcd_img_path, pcd_depth_path, f'Final pose (blue) and ground truth (red)')
+        # pcds = [est_pcd, target_pcd]
+        pcds = [est_pcd]
+        vis = Visualize(pcds, pcd_img_path, pcd_depth_path)
+        vis.set_pcds(pcds)
+        vis.custom_draw_geometry_with_key_callback('Final pose')
+        # vis.custom_draw_geometry_with_rotation('Final pose')
         # //
 
         if idx[0].item() in sym_list:
