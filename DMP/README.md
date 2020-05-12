@@ -1,5 +1,4 @@
-All the gifs shown below have a demostrated position for the end-effector marked with 
-Some Markdown text with <span style="color:blue">some *blue* text</span>.
+All the gifs shown below have a demostrated position for the end-effector marked with blue and the DMP generated path is marked with orange.
 
 ### Online obstacle avoidance with original parameters
 ![](mov_obs_original_param/3D_ori_param.gif)
