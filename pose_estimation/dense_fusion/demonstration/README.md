@@ -26,4 +26,6 @@
 
 ## Results of DenseFusion (Slide 4)
 
-![Result of DenseFusion](results_DenseFusion_3D-3D.png)
+| Results |
+|:-:|
+| ![Result of DenseFusion](results_DenseFusion_3D-3D.png) |
