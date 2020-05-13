@@ -1,6 +1,6 @@
 # Obstacle Avoidance with Dynamic Movements Primitives
 
-This project explores the abillity of performing obstacle avoidance with the use of dymamic movements primitives. The project is part of the course Project in Advanced Robotics at SDU which is a 5 ETCS course. The project consist of 3 parts:
+This project explores the abillity of performing obstacle avoidance with the use of dymamic movements primitives. The project is part of the course Project in Advanced Robotics at SDU which is a 5 ETCS course. The project consist of:
 
 - Dynamic movement primitives
 - Obstacle avoidance
