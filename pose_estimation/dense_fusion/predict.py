@@ -29,7 +29,7 @@ from pose_estimation.dense_fusion.lib.knn.__init__ import KNearestNeighbor
 
 
 parser = argparse.ArgumentParser(description='Predict with DenseFusion')
-parser.add_argument('--item', type=str, default='01', help='item to predict (default: 01 for ape)')
+parser.add_argument('--item', type=str, default='04', help='item to predict (default: 01 for ape)')
 parser.add_argument('--data_root', type=str, default='pose_estimation/dataset/linemod/Linemod_preprocessed', help='path/to/dataset/root')
 parser.add_argument('--posenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_model_9_0.01310166542980859.pth', help='path/to/posenet/model')
 parser.add_argument('--refinenet_model', type=str, default='pose_estimation/dense_fusion/trained_models/linemod/pose_refine_model_29_0.006821325639856025.pth', help='path/to/refinenet/model')
@@ -43,7 +43,7 @@ class Visualize:
         self.img_path = img_path
         self.depth_path = depth_path
         self.index = 0
-        self.get_rgbd_input()
+        # self.get_rgbd_input()
 
     def get_rgbd_input(self):
         color_raw = o3d.io.read_image(self.img_path)
@@ -102,6 +102,14 @@ class Visualize:
             return False
 
         o3d.visualization.draw_geometries_with_animation_callback(self.pcds, rotate_view)
+
+    	
+    def custom_draw_geometry(self, win_name):
+        vis = o3d.visualization.Visualizer()
+        vis.create_window(window_name=win_name)
+        [vis.add_geometry(pcd) for pcd in self.pcds]
+        vis.run()
+        vis.destroy_window()
 
     def set_pcds(self, pcds):
         self.pcds = pcds  
@@ -295,7 +303,7 @@ class Dataset(Dataset):
 def main():
     num_objects = 13
     objlist = [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15]
-    num_points = 500
+    num_points = 10000 #500
     iteration = 2
     bs = 1
     dataset_config_dir = 'pose_estimation/dataset/linemod/dataset_config'
@@ -385,12 +393,13 @@ def main():
 
         # pcds = [pcd_target, pcd_gt]
         # vis = Visualize(pcds, pcd_img_path, pcd_depth_path)
-        # vis.custom_draw_geometry_with_key_callback('Pose from PoseNet')
 
         # bar.write(f'Pose from PoseNet\n Rotation\n{pcd_r}\n translation\n{t}')
         
         # error = np.mean(np.linalg.norm(pcd_pose - gt, axis=1))
         # bar.write(f'Add score --> {error}')
+
+        # vis.custom_draw_geometry(f'Initial pose width ADD score {error:.4f}')
         # # //
 
         for j in range(0, iteration):
@@ -459,16 +468,19 @@ def main():
 
             # pcds = [pcd_target, pcd_gt]
             # vis.set_pcds(pcds)
-            # vis.custom_draw_geometry_with_key_callback(f'Pose after {j} refinement')
-            
+
             # error = np.mean(np.linalg.norm(pcd_pose - gt, axis=1))
             # bar.write(f'Add score --> {error}')
+
+            # vis.custom_draw_geometry(f'Refinement {j+1} with ADD score {error:.4f}')
             # # //
         
         model_points = model_points[0].cpu().detach().numpy()
         r = quaternion_matrix(r)
         r = r[:3, :3]
         pose = np.dot(model_points, r.T) + t
+
+        target = target[0].cpu().detach().numpy()
 
         # // show pose
         bar.write(f'Final pose\n Rotation\n{r}\n translation\n{t}')
@@ -479,18 +491,14 @@ def main():
         est_pcd.points = o3d.utility.Vector3dVector(pose)
         est_pcd.paint_uniform_color([0, 0, 1])
 
-        target = target[0].cpu().detach().numpy()
 
         target_pcd = o3d.geometry.PointCloud()
         target_pcd.points = o3d.utility.Vector3dVector(target)
         target_pcd.paint_uniform_color([1, 0, 0])
 
-        # pcds = [est_pcd, target_pcd]
-        pcds = [est_pcd]
-        vis = Visualize(pcds, pcd_img_path, pcd_depth_path)
+        pcds = [est_pcd, target_pcd]
+        # vis = Visualize(pcds, pcd_img_path, pcd_depth_path)
         vis.set_pcds(pcds)
-        vis.custom_draw_geometry_with_key_callback('Final pose')
-        # vis.custom_draw_geometry_with_rotation('Final pose')
         # //
 
         if idx[0].item() in sym_list:
@@ -529,6 +537,10 @@ def main():
 
         success_rate = float(np.sum(success_count)) / np.sum(num_count)
         bar.set_description(f'Succes rate {success_rate:.4f} Distance {dis:.4f}')
+
+        # // show pose
+        vis.custom_draw_geometry(f'Final pose with ADD score {dis:.4f}')
+        # //
 
     avg_time = np.mean(times)
     std_time = np.std(times)
