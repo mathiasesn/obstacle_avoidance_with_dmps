@@ -2,6 +2,6 @@ In this folder files for the implementation of link collision avoidance are loca
 
 In the folder **GIF** animations of the robot performing avoidance of link collisions are available.
 
-![q2_g0](GIF/q2_g0.gif)
+![q3_g0](GIF/q3_g0.gif)
 
-![q2_g100](GIF/q2_g100.gif)
+![q3_g100](GIF/q3_g100.gif)
