@@ -41,8 +41,8 @@ class dataset_global_align():
                 input_line = input_file.readline()
 
                 # TEMPT TEST DELETE AFTER
-                # if bob > 2:
-                #     break
+                if bob > 10:
+                    break
                 
                 if not input_line:
                     break
@@ -148,7 +148,6 @@ class dataset_global_align():
         # target is ground truth
         target = np.dot(model_pts, target_r.T)
         target = np.add(target, target_t / 1000.0)
-        out_t = target_t / 1000.0
 
         if self.show:
             depth_cv2 = cv2.imread(self.list_depth[index], cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
