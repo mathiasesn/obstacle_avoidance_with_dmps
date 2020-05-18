@@ -74,12 +74,13 @@ if __name__ == '__main__':
     demo_p = demo[:, 0:3]
 
     # Recalculating DMP based on new space of sphere
-    sphere = Obstacle([0.575, 0.30, 0.45])
-    #sphere = Obstacle(demo_p[int(len(demo_p)/4),:])
+   # sphere = Obstacle([0.575, 0.30, 0.45])
+    sphere = Obstacle(demo_p[int(len(demo_p)/4),:])
    # obs_traj = np.squeeze(self.obstacles.create_trajectory([0.65,0.20,0.45], len(t)))
 
     obs_traj = demo_p[760:int(len(demo_p)/4),:] 
     obs_traj = obs_traj[::-1] # reversing path of DMP
+
     start_obs_mov = 450 # index of DMP when to start moving the obstacle
 
 
@@ -87,4 +88,4 @@ if __name__ == '__main__':
     dmp = PositionDMP(n_bfs=N, alpha=48.0, obstacles=sphere)
     dmp.train(demo_p, t, tau)
   #  dmp.move_and_plot_dmp_obs(demo_p, t, tau, obs_traj, start_obs_mov)
-   # dmp.plot_euclidian_diff(demo_p, t, tau, obs_traj, start_obs_mov)
+    dmp.plot_euclidian_diff(demo_p, t, tau, obs_traj, start_obs_mov)

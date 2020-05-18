@@ -1,6 +1,6 @@
 import numpy as np
 class Obstacle:
-    def __init__(self, pos, radius = 0.025, discrete_steps = 15):
+    def __init__(self, pos, radius = 0.015, discrete_steps = 15):
         """
         Creates spherical obstacle centered at 'pos' with radius 'radius'.
         Meshgrid created with amount of steps 'discrete_steps'.

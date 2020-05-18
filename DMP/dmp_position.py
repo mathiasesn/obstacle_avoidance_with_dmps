@@ -203,13 +203,38 @@ class PositionDMP():
         dmp_p_w_att, _ = self.rollout_moving_obstacle(ts, tau, obs_traj, start_obs_mov, demo_p, acctractor_term=True)
         dmp_p, _ = self.rollout_moving_obstacle(ts, tau, obs_traj, start_obs_mov, demo_p, acctractor_term=False)
 
-        t = np.arange(0, tau, 0.002)
-        plt.xlabel('t (s)')
-        plt.ylabel('|| Demo - DMP ||')
-        plt.plot(t, np.linalg.norm(demo_p - dmp_p, axis=1), label='Error without attraction field')
-        plt.plot(t, np.linalg.norm(demo_p - dmp_p_w_att, axis=1), label='Error with attraction field ')
+        max_without = np.max(np.linalg.norm(demo_p - dmp_p, axis=1))
+        avg_without = np.mean(np.linalg.norm(demo_p - dmp_p, axis=1))
 
-        plt.legend()
+        max_with = np.max(np.linalg.norm(demo_p - dmp_p_w_att, axis=1))
+        avg_with = np.mean(np.linalg.norm(demo_p - dmp_p_w_att, axis=1))
+        print(f"Max error for dmp without attraction {max_without:.4f}")
+        print(f"Average error for dmp without attraction {avg_without:.4f}")
+
+        print(f"Max error for dmp with attraction {max_with:.4f}")
+        print(f"Average error for dmp with attraction {avg_with:.4f}")
+
+        textstr = '\n'.join((
+                            r'$max(|| Demo - DMP ||)$ without attraction$=%.4f$' % (max_without, ),
+                            r'$avg(|| Demo - DMP ||)$ without attraction$=%.4f$' % (avg_without, ),
+                            r'$max(|| Demo - DMP ||)$ with attraction=$%.4f$' % (max_with, ),
+                            r'$avg(|| Demo - DMP ||)$ with attraction=$%.4f$' % (avg_with, ),
+                            ))
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+
+        fig = plt.figure()
+        ax = fig.add_axes([0.1, 0.1, 0.8, 0.7])
+
+        ax.text(0, 1.2, textstr, transform=ax.transAxes, fontsize=8, verticalalignment='top', bbox=props)
+
+        t = np.arange(0, tau, 0.002)
+        ax.set_xlabel('t (s)')
+        ax.set_ylabel('|| Demo - DMP ||')
+        ax.plot(t, np.linalg.norm(demo_p - dmp_p, axis=1), label='Error without attraction field')
+        ax.plot(t, np.linalg.norm(demo_p - dmp_p_w_att, axis=1), label='Error with attraction field ')
+
+        ax.legend()
+
         plt.show()
           
     def rollout(self, ts, tau):
