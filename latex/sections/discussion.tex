@@ -1,0 +1,18 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+
+\section{Discussion} \label{sec:discussion}
+
+The tuning process of potential fields for obstacle avoidance in DMPs is a time consuming process and must be repeated for each type of obstacle including shape and size. To avoid this time consuming and individual process another demonstration could be presented, where a human demonstrates how to avoid an obstacle. By doing this and adding an extra term to the DMP, it might be possible to fit the DMP to the demonstration and thus learn parameters for the potential fields instead of tuning them by hand.
+
+The damping term, $\lambda$, in section \ref{sec:linkcollision} was chosen empirically, but can be chosen dynamically \cite{buss_introduction_nodate}, which might show to be beneficial for other trajectories and obstacles than those used.
+
+The implementation of link collision avoidance does not consider joint accelerations, thus if the link collision avoidance was to be implemented in a real system, it might show to be necessary to inspect joint accelerations and incorporate a limit on these.
+
+The pose estimation methods uses the LINEMOD dataset described in section \ref{subsec:dataset} for performance evaluation and the objects can be seen in figure \ref{fig:linemod_objects}. The objects are fairly simple to distinguish between, since most of the objects have different color and very different shape. Moreover, the objects of interest are mainly placed in the center of the images as illustrated in figure \ref{fig:linemod_examples}. Therefore, for future work the implemented methods should also be evaluated on other datasets or a self made dataset.
+
+At the start of the project the training of DenseFusion from section \ref{subsec:dense_fusion} was done from scratch. However, after several training hours with small growth in accuracy, it was decided to used the pretrained DenseFusion model form \cite{linemod_preprocessed}. Thus, for future work the full training time of DenseFusion should be estimated.
+
+In section \ref{sec:pose_estimation}, two pose estimation methods are compared, DenseFusion and 3D-3D pose estimation. It was shown that DenseFusion outperforms the 3D-3D pose estimation on the LINEMOD dataset. However, the implementation and training of DenseFusion is far more complicated than 3D-3D pose estimation. Therefore, when choosing between the two methods the implementation time must be taken into account.
+
+\end{document}

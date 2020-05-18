@@ -1,0 +1,13 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+Two repulsive fields for end-effector obstacle avoidance incorporated into dynamic movement primitives were designed and evaluated. It was shown that a repulsive term based on coupled terms with addition of an attractional field towards the demonstrated trajectory had the best performance with respect to avoiding obstacles and still following the shown demonstration, but at the expense of slight oscillation around the demonstrated path, when avoiding an obstacle.
+
+A link collision avoidance algorithm for a 7-DOF robot manipulator was designed that was able to follow a trajectory with the end-effector while avoiding collisions between obstacles and the links of the robot. The link collision algorithm is based on damped least squares, null space movement based on a potential field around the obstacles and a clamping function limiting the generated joint velocities to improve the response when operating close to singularities.
+
+The 6-DOF pose estimation method DenseFusion was implemented and evaluated on the LINEMOD dataset. DenseFusion acheives an overall accuracy of $95.76\ \%$ on the LINEMOD dataset. The implemented DenseFusion method outperforms a standard 3D-3D pose estimation.
+
+\end{document}

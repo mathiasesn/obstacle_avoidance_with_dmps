@@ -1,0 +1,15 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+
+\section{Introduction}
+\label{sec:intro}
+In this project the framework of dynamic movement primitives will briefly be explored for both position and rotation, before moving into obstacle avoidance for a 7-DOF robot manipulator. 
+
+End-effector obstacle avoidance will be incorporated into the framework of dynamic movement primitives, where the usage of repulsive potential fields will be explored. Afterwards, avoidance of collision between the links of the robot and obstacles will be considered and incorporated into inverse kinematics. To achieve a feasible inverse kinematics solution for link collision avoidance it will briefly be looked at how the performance when operating close to singularities can be improved to avoid infeasible joint velocities.
+
+The focus of this project is not to tune the avoidance method into perfection, but more simply to explore the possibilities of incorporating potential fields into the dynamic movement primitive framework and explore link collision avoidance.
+
+Finally, 6D pose estimation will be described and implemented since the avoidance methods assumes the pose of an obstacle is known. The 6D pose estimation can be implemented to pose estimate obstacles and thus deliver a pose that can be used by the obstacle avoidance methods. For 6D pose estimation a technique based on neural networks will be compared to a more traditional 3D-3D pose estimation method.
+
+
+\end{document}

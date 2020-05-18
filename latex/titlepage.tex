@@ -1,0 +1,49 @@
+\documentclass[main.tex]{subfiles}
+\graphicspath{{./img/}{../img}}
+\begin{document}
+\begin{titlepage}
+	\setstretch{1}
+\begin{center}
+\textsc{\LARGE University of Southern Denmark}\\[1.5cm]
+
+\textsc{\large Project in Advanced Robotics - Spring 2020}\\[0.5cm]
+% Title
+\rule{\linewidth}{0.5mm}\\[0.4cm]
+{ \LARGE \bfseries Obstacle Avoidance with Dynamic Movement Primitives \\[0.4cm]}
+\rule{\linewidth}{0.5mm}\\[1.2cm]
+
+% Authors and supervisor
+\begin{tabular}{c c c c c}
+	Emil Vincent Ancker & & Mikkel Larsen\\ 
+	09/06-1997 & & 08/08-1996 \\
+	emanc16@student.sdu.dk & & milar16@student.sdu.dk \\
+	\\
+	Mathias Emil Slettemark-Nielsen & & Bjarke Engsig Larsen \\
+	23/02-1995 & & 13/07-1995 \\
+	masle16@student.sdu.dk & & blars16@student.sdu.dk \\
+	\\
+\end{tabular}
+
+\vfill
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.8]{figures/SDU_BLACK_RGB_png.png}
+\end{figure}
+\vfill
+
+
+\textbf{Group number:} 8
+
+\textbf{Supervisor:} Iñigo Iturrate San Juan\\ [0.5cm]
+
+\textbf{Project period:} 2nd April 2020 - 29th May 2020
+
+\newcommand{\quickwordcount}[1]{%
+  \immediate\write18{texcount -1 -sum -merge sections/introduction.tex sections/robotics.tex sections/vision.tex sections/combination.tex sections/discussion.tex sections/conclusion.tex > #1-words}%
+  \input{#1-words}words%
+}
+%\textbf{Word count:} \quickwordcount{}
+
+\end{center}
+\end{titlepage}
+\end{document}

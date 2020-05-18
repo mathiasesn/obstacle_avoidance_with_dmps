@@ -1,0 +1,75 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{setup}
+\usepackage[utf8]{inputenc}
+\usepackage{pgfkeys}
+\usepackage{csquotes}
+\usepackage{multirow}
+\renewcommand{\arraystretch}{1.2}
+\usetikzlibrary{shapes,arrows}
+\usepackage[table,xcdraw]{xcolor}
+
+\addbibresource{appendices/bibliography.bib}
+
+\raggedbottom
+\linespread{1.4}
+\graphicspath{{./figures/}{../figures/}}
+\DeclareGraphicsExtensions{.pdf,.png,.jpg}
+\setlength{\marginparwidth}{2cm}
+
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\avg}{average}
+
+\begin{document}
+    
+    \cfoot[]{ \fancyplain{}{\footnotesize} }
+    \fancyhead{}
+    
+    \subfile{titlepage}
+    \clearpage
+    \subfile{sections/preface}
+    \clearpage
+    
+    \setcounter{tocdepth}{2}
+    \tableofcontents
+    \clearpage
+    
+    \pagenumbering{arabic}    
+    \fancyhead[R]{\large \textlcsc{ Introduction } }
+    \fancyhead[L]{\large \textsc{ section } \normalsize \thesection}
+    \cfoot{\thepage\ of \pageref{LastPage}}
+    
+    \subfile{sections/introduction}
+    \clearpage
+    
+    \fancyhead[R]{\large \textlcsc{ Dynamic Movement Primitives } }
+    \subfile{sections/DMP}
+    \clearpage
+    
+    \fancyhead[R]{\large \textlcsc{ Potential Fields for Obstacle Avoidance } }
+    \subfile{sections/avoidance}
+    \clearpage
+    
+    \fancyhead[R]{\large \textlcsc{ Link Collision Avoidance } }
+    \subfile{sections/linkcollision}
+    \clearpage
+    
+    %\fancyhead[R]{\large \textlcsc{ Combining Online DMP and Link Collision Avoidance} }
+    %\subfile{sections/combining}
+    %\clearpage
+    
+    \fancyhead[R]{\large \textlcsc{ 6D Object Pose Estimation } }
+    \subfile{sections/vision}
+    \clearpage
+    
+    \fancyhead[R]{\large \textlcsc{ Discussion } }
+    \subfile{sections/discussion}
+    \clearpage
+    
+    \fancyhead[R]{\large \textlcsc{ Conclusion } }
+    \subfile{sections/conclusion}
+    \clearpage
+    
+    \fancyhead[R]{\large \textlcsc{ } }
+    \printbibliography
+    
+\end{document}
